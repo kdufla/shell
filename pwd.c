@@ -1,8 +1,15 @@
 #include "pwd.h"
 
 int cmd_pwd(unused struct tokens *tokens){
-	char pathh[1000];
-	char *path = getcwd(pathh, 1000);
-	fprintf(stdout, "%s\n", path);
-	return 0;
+	char *path = (char*)malloc(PATH_MAX);
+	path = getcwd(path, PATH_MAX);
+	
+	if(!path){
+		free(path);
+		return -1;
+	}else{
+		fprintf(stdout, "%s\n", path);	
+		free(path);
+		return 0;
+	}
 }
