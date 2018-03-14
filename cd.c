@@ -4,7 +4,7 @@ int cmd_cd(struct tokens *tokens){
 	char *path = tokens_get_token(tokens, 1);
 	int rv = chdir(path);
 	if(rv == -1){
-		fprintf(stdout, "No such directory\n");		
+		fprintf(stderr, "%s\n", strerror(errno));		
 	}
 	return rv;
 }
