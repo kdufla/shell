@@ -10,6 +10,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "pwd.h"
+#include "cd.h"
 #include "tokenizer.h"
 
 /* Convenience macro to silence compiler warnings about unused function parameters. */
@@ -43,6 +45,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
+  {cmd_pwd, "pwd", "print working directory"},
+  {cmd_cd, "cd", "change directory"}
 };
 
 /* Prints a helpful description for the given command */
