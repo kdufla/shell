@@ -6,6 +6,9 @@ struct tokens;
 /* Turn a string into a list of words. */
 struct tokens *tokenize(const char *line);
 
+/* turn PATH into a list of env paths. */
+struct tokens *tokenize_env(const char *line);
+
 /* How many words are there? */
 size_t tokens_get_length(struct tokens *tokens);
 

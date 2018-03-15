@@ -24,6 +24,39 @@ static void *copy_word(char *source, size_t n) {
   return word;
 }
 
+struct tokens *tokenize_env(const char *line){
+  char *env_line = strdup(line);
+  struct tokens *tok = malloc(sizeof(struct tokens));
+	char *start = env_line, *curr = env_line;
+
+	int len = 1;
+	while (*curr != '\0'){
+		if (*curr == ':')
+			len++;
+		curr++;
+	}
+	curr=env_line;
+
+	tok->tokens_length = len;
+	tok->tokens = malloc(sizeof(char *) * len);
+  tok->buffers_length = 0;
+
+	int i = 0;
+	while (*curr != '\0'){
+		if (*curr == ':'){
+			*curr = '\0';
+			tok->tokens[i++] = strdup(start);
+			start = curr + 1;
+		}
+		curr++;
+	}
+	tok->tokens[i] = strdup(start);
+
+  free(env_line);
+
+  return tok;
+}
+
 struct tokens *tokenize(const char *line) {
   if (line == NULL) {
     return NULL;
