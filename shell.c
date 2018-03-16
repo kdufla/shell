@@ -144,9 +144,9 @@ int main(unused int argc, unused char *argv[]) {
 
     int out_r = 0;
     char *out_file;
-    
+
     struct tokens *redir_out = tokenize_str(line, " > ");
-    if(tokens_get_length(redir_out)>1){
+    if(tokens_get_length(redir_out) > 1){
       out_r++;
       out_file = strdup(tokens_get_token(redir_out, 1));
       line_actual_command = strdup(tokens_get_token(redir_out, 0));
@@ -193,7 +193,7 @@ int main(unused int argc, unused char *argv[]) {
             outpath = getcwd(outpath, PATH_MAX);
             strcat(outpath, "/");
             strcat(outpath, out_file);
-            printf("%s, %d\n",out_file, (int)strlen(out_file));
+            //printf("%s, %d\n",out_file, (int)strlen(out_file));
         		
             int outfd = open(out_file, O_WRONLY | O_RDONLY | O_CREAT, 00600);
             dup2(outfd, STDOUT_FILENO);
@@ -218,6 +218,12 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
+        if(out_r){
+      free(line_actual_command);
+      free(out_file);
+    }
+    tokens_destroy(redir_out);    
+
   }
 
   return 0;
