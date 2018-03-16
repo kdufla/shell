@@ -1,6 +1,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
 #include "tokenizer.h"
 
 struct tokens {
@@ -24,18 +26,35 @@ static void *copy_word(char *source, size_t n) {
   return word;
 }
 
-struct tokens *tokenize_env(const char *line){
-  char *env_line = strdup(line);
+int check_match(char *line, char *delim){
+  char *curr_delim = delim, *curr_line = line;
+
+  while(*curr_delim != '\0'){
+    if(*curr_delim == *curr_line){
+      curr_delim++;
+      curr_line++;
+    }else{
+      return 0;
+    }      
+  }
+  return 1;
+}
+
+struct tokens *tokenize_str(const char *line, const char *delimiter){
+  char *env_line = strdup(line), *delim = strdup(delimiter);
   struct tokens *tok = malloc(sizeof(struct tokens));
 	char *start = env_line, *curr = env_line;
 
 	int len = 1;
 	while (*curr != '\0'){
-		if (*curr == ':')
+		if (check_match(curr, delim)){
 			len++;
-		curr++;
+  		curr += strlen(delim);
+    }else{
+		  curr++;
+    }
 	}
-	curr=env_line;
+	curr = env_line;
 
 	tok->tokens_length = len;
 	tok->tokens = malloc(sizeof(char *) * len);
@@ -43,16 +62,19 @@ struct tokens *tokenize_env(const char *line){
 
 	int i = 0;
 	while (*curr != '\0'){
-		if (*curr == ':'){
+		if (check_match(curr, delim)){
 			*curr = '\0';
 			tok->tokens[i++] = strdup(start);
-			start = curr + 1;
-		}
-		curr++;
+  		curr += strlen(delim);
+			start = curr;
+		}else{
+		  curr++;
+    }
 	}
 	tok->tokens[i] = strdup(start);
 
   free(env_line);
+  free(delim);
 
   return tok;
 }
