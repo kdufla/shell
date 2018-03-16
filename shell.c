@@ -10,6 +10,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "ulimit.h"
 #include "pwd.h"
 #include "cd.h"
 #include "tokenizer.h"
@@ -46,7 +47,8 @@ fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_pwd, "pwd", "print working directory"},
-  {cmd_cd, "cd", "change directory"}
+  {cmd_cd, "cd", "change directory"},
+  {cmd_ulimit, "ulimit", "user limits"}
 };
 
 /* Prints a helpful description for the given command */
@@ -154,7 +156,7 @@ int main(unused int argc, unused char *argv[]) {
 
 	    if (pid == 0){
         struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
-        
+
         /*
         for(int n =0; n<4;n++){
           printf("%s\n", tokens_get_token(env_tok, n));
@@ -166,7 +168,7 @@ int main(unused int argc, unused char *argv[]) {
         if(command){
           size_t len = tokens_get_length(tokens);
           char* args[len+1];
-          
+
           // fill args with args from tokens
           for(int i = 0; i<=len; i++){
             args[i] = tokens_get_token(tokens, i);

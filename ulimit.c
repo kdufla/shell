@@ -3,57 +3,155 @@
 typedef struct ulimit_resource {
   char symbol;
   int  resource;
+  char *name;
+  int  devisor;
 } ulimit_resource_t;
 
 ulimit_resource_t resource_dict[] = {
-  {'v', RLIMIT_AS},
-  {'c', RLIMIT_CORE},
-  {'t', RLIMIT_CPU},
-  {'d', RLIMIT_DATA},
-  {'f', RLIMIT_FSIZE},
-  {'l', RLIMIT_MEMLOCK},
-  {'q', RLIMIT_MSGQUEUE},
-  {'e', RLIMIT_NICE},
-  {'x', RLIMIT_LOCKS},
-  {'n', RLIMIT_NOFILE},
-  {'u', RLIMIT_NPROC},
-  {'r', RLIMIT_RTPRIO},
-  {'i', RLIMIT_SIGPENDING},
-  {'s', RLIMIT_STACK},
-  {'m' -1},
-  {'p' -1}
+  {'v', RLIMIT_AS,         "virtual memory          (kbytes, -v)", 1024},
+  {'c', RLIMIT_CORE,       "core file size          (blocks, -c)", 1   },
+  {'t', RLIMIT_CPU,        "cpu time               (seconds, -t)", 1   },
+  {'d', RLIMIT_DATA,       "data seg size           (kbytes, -d)", 1024},
+  {'f', RLIMIT_FSIZE,      "file size               (blocks, -f)", 1   },
+  {'l', RLIMIT_MEMLOCK,    "max locked memory       (kbytes, -l)", 1024},
+  {'q', RLIMIT_MSGQUEUE,   "POSIX message queues     (bytes, -q)", 1   },
+  {'e', RLIMIT_NICE,       "scheduling priority             (-e)", 1   },
+  {'x', RLIMIT_LOCKS,      "file locks                      (-x)", 1   },
+  {'n', RLIMIT_NOFILE,     "open files                      (-n)", 1   },
+  {'u', RLIMIT_NPROC,      "max user processes              (-u)", 1   },
+  {'r', RLIMIT_RTPRIO,     "real-time priority              (-r)", 1   },
+  {'i', RLIMIT_SIGPENDING, "pending signals                 (-i)", 1   },
+  {'s', RLIMIT_STACK,      "stack size              (kbytes, -s)", 1024}
+  // {'m', -1,                "max memory size         (kbytes, -m)", 1024},
+  // {'p', -1,                "pipe size            (512 bytes, -p)", 512 }
 };
+
+typedef struct ulimit_value {
+  int           used;
+  char          *name;
+  int           devisor;
+  struct rlimit *rlim;
+} ulimit_value_t;
 
 int resource_lookup(char symbol) {
   for (unsigned int i = 0; i < sizeof(resource_dict); i++)
-    if (symbol == resource_dict[i])
-      return resource_dict[i].resource;
+    if (symbol == resource_dict[i].symbol) {
+      return i;
+    }
   return -1;
 }
 
+int is_number(char *string){
+  for (int i = 0; i < strlen(string); i++){
+    if ( !isdigit(string[i]) ){
+      return -1;
+    }
+  }
+  return 0;
+}
+
 int cmd_ulimit(struct tokens *tokens){
-  int args_len = tokens_get_length(tokens);
-  int curr_resource = NULL;
+  size_t args_len = tokens_get_length(tokens);
+  ulimit_value_t values[14]; // Can be optimized using malloc
+  for (int i = 0; i < 14; i++) {
+    values[i].used = -1;
+  }
+  int value_i = 0;
+  // int curr_resource = NULL;
   int hardness = 0;
-  for(int i=1; i<args_len; i++){
-    char *arg = tokens_get_token(tokens, i)
-    if(arg[0] == '-'){
-      if(strlen(arg) == 2){
-        int resource = resource_lookup(arg[1]);
-        if(resource != -1){
-          struct rlimit *rlim = malloc(sizeof(struct rlimit));
-          int rv = getrlimit(resource, rlim);
-          rlim_t soft = rlim->rlim_cur
-          rlim_t hard = rlim->rlim_max
-          if(rv == 0){
-            fprintf(stdout, "Soft limit: %ju bytes\n", (uintmax_t)soft);
-            fprintf(stdout, "Hard limit: %ju bytes\n", (uintmax_t)hard);
+  int a_is_met = 0;
+  int rv = -1;
+  if (args_len == 1) {
+    fprintf(stdout, "unlimited\n");
+  }
+  for (int i = 1; i < args_len; i++) {
+    char *arg = tokens_get_token(tokens, i);
+    if (arg[0] == '-') {
+      if (strlen(arg) == 2) {
+        if (arg[1] == 'H') {
+          hardness = 1;
+        }
+        else if (arg[1] == 'S') {
+          hardness = 0;
+        }
+        else if (arg[1] == 'a') {
+          value_i = 0;
+          for (int j = 0; j < 14; j++) {
+            ulimit_resource_t resource = resource_dict[j];
+            values[value_i].rlim = malloc(sizeof(struct rlimit));
+            values[value_i].used = 0;
+            rv = getrlimit(resource.resource, values[value_i].rlim);
+            if(rv == 0){
+              values[value_i].name = resource.name;
+              values[value_i].devisor = resource.devisor;
+              value_i++;
+            }
+            else {
+              fprintf(stderr, "%s\n", strerror(errno));
+            }
           }
-          else{
-            fprintf(stderr, "%s\n", strerror(errno));
+          a_is_met = 1;
+        }
+        else if (a_is_met == 0) {
+          int resource_i = resource_lookup(arg[1]);
+          if (resource_i != -1) {
+            ulimit_resource_t resource = resource_dict[resource_i];
+            values[value_i].rlim = malloc(sizeof(struct rlimit));
+            rv = getrlimit(resource.resource, values[value_i].rlim);
+            if(rv == 0){
+              values[value_i].used = 0;
+              values[value_i].name = resource.name;
+              values[value_i].devisor = resource.devisor;
+              value_i++;
+            }
+            else {
+              fprintf(stderr, "%s\n", strerror(errno));
+            }
+          }
+          else {
+            fprintf(stderr, "Invalid option\n");
+            rv = -1;
           }
         }
       }
+      else {
+        fprintf(stderr, "Invalid option\n");
+        rv = -1;
+      }
+    }
+    else if ( strcmp(arg, "unlimited") == 0 ) {
+
+    }
+    else if ( is_number(arg) == 0 ) {
+
+    }
+    else {
+      fprintf(stderr, "Invalid option\n");
+      rv = -1;
     }
   }
+
+  for (int i = 0; i < 14; i++) {
+    if (values[i].used == 0) {
+      if (rv == 0) {
+        struct rlimit *rlim = values[i].rlim;
+        rlim_t lim;
+        if (hardness == 0) {
+          lim = rlim->rlim_cur;
+        }
+        else {
+          lim = rlim->rlim_max;
+        }
+        if (lim == RLIM_INFINITY) {
+          fprintf(stdout, "%s unlimited\n", values[i].name);
+        }
+        else {
+          fprintf(stdout, "%s %ju\n", values[i].name, (uintmax_t)lim/values[i].devisor);
+        }
+      }
+      free(values[i].rlim);
+    }
+  }
+
+  return rv;
 }
