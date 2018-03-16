@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "pwd.h"
 #include "cd.h"
@@ -139,8 +140,22 @@ int main(unused int argc, unused char *argv[]) {
     fprintf(stdout, "%d: ", line_num);
 
   while (fgets(line, 4096, stdin)) {
+    char *line_actual_command;
+
+    int out_r = 0;
+    char *out_file;
+
+    struct tokens *redir_out = tokenize_str(line, " > ");
+    if(tokens_get_length(redir_out)>1){
+      out_r++;
+      out_file = strdup(tokens_get_token(redir_out, 1));
+      line_actual_command = strdup(tokens_get_token(redir_out, 0));
+    }else{
+      line_actual_command = line;
+    }
+
     /* Split our line into words. */
-    struct tokens *tokens = tokenize(line);
+    struct tokens *tokens = tokenize(line_actual_command);
 
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
@@ -154,7 +169,7 @@ int main(unused int argc, unused char *argv[]) {
 
 	    if (pid == 0){
         struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
-        
+
         /*
         for(int n =0; n<4;n++){
           printf("%s\n", tokens_get_token(env_tok, n));
@@ -172,6 +187,17 @@ int main(unused int argc, unused char *argv[]) {
             args[i] = tokens_get_token(tokens, i);
           }
           args[len] = NULL;
+
+          if(out_r){
+            char *outpath = (char*)malloc(PATH_MAX);
+            outpath = getcwd(outpath, PATH_MAX);
+            strcat(outpath, "/");
+            strcat(outpath, out_file);
+            printf("%s\n",outpath);
+        		int outfd = open(outpath, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+            dup2(outfd, STDOUT_FILENO);
+            close(outfd);
+          }
 
           execv(command, args);
         }else{
