@@ -69,6 +69,39 @@ int lookup(char cmd[]) {
   return -1;
 }
 
+/* Check if file exists */
+int check_file(char *path){
+  return (access(path, F_OK ) != -1);
+}
+
+/* Concatenate two strings with "/" in between */
+char* concat_for_path(const char *s1, const char *s2){
+  char *result = malloc(strlen(s1)+strlen(s2)+2);
+  if(result){
+    strcpy(result, s1);
+    strcat(result, "/");
+    strcat(result, s2);
+  }
+  return result;
+}
+
+/* Search program in enviroment and return correct path */
+char* search_program(struct tokens* tokens, char* program){
+  if(check_file(program)){
+    return program;
+  }else{
+    for(int i = 0; i < tokens_get_length(tokens); i++){
+      char* path = concat_for_path(tokens_get_token(tokens, i), program);
+      if(check_file(path)){
+        return path;
+      }else{
+        free(path);
+      }
+    }
+  }
+  return NULL;
+}
+
 /* Intialization procedures for this shell */
 void init_shell() {
   /* Our shell is connected to standard input. */
@@ -115,8 +148,37 @@ int main(unused int argc, unused char *argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-      /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      pid_t pid;
+
+    	pid = fork();
+
+	    if (pid == 0){
+        //fprintf(stdout, "child : %d\n", getpid());
+
+        struct tokens* env_tok = tokenize_env(getenv("PATH"));
+        char* program_name = tokens_get_token(tokens, 0);
+        char* command = search_program(env_tok, program_name);
+
+        size_t len = tokens_get_length(tokens);
+        char* args[len+1];
+        
+        //char* command = tokens_get_token(tokens, 0);
+
+        // fill args with args from tokens
+        for(int i = 0; i<=len; i++){
+          args[i] = tokens_get_token(tokens, i);
+        }
+        args[len] = NULL;
+
+        execv(command, args);
+        
+        free(command);
+        tokens_destroy(env_tok);
+        exit(1);
+	    }else{
+        wait(NULL);
+        //fprintf(stdout, "met child\n");
+      }
     }
 
     if (shell_is_interactive)
