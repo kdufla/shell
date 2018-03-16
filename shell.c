@@ -153,7 +153,13 @@ int main(unused int argc, unused char *argv[]) {
     	pid = fork();
 
 	    if (pid == 0){
-        struct tokens* env_tok = tokenize_env(getenv("PATH"));
+        struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
+        
+        /*
+        for(int n =0; n<4;n++){
+          printf("%s\n", tokens_get_token(env_tok, n));
+        }
+        */
         char* program_name = tokens_get_token(tokens, 0);
         char* command = search_program(env_tok, program_name);
 
