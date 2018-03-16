@@ -153,31 +153,29 @@ int main(unused int argc, unused char *argv[]) {
     	pid = fork();
 
 	    if (pid == 0){
-        //fprintf(stdout, "child : %d\n", getpid());
-
         struct tokens* env_tok = tokenize_env(getenv("PATH"));
         char* program_name = tokens_get_token(tokens, 0);
         char* command = search_program(env_tok, program_name);
 
-        size_t len = tokens_get_length(tokens);
-        char* args[len+1];
-        
-        //char* command = tokens_get_token(tokens, 0);
+        if(command){
+          size_t len = tokens_get_length(tokens);
+          char* args[len+1];
+          
+          // fill args with args from tokens
+          for(int i = 0; i<=len; i++){
+            args[i] = tokens_get_token(tokens, i);
+          }
+          args[len] = NULL;
 
-        // fill args with args from tokens
-        for(int i = 0; i<=len; i++){
-          args[i] = tokens_get_token(tokens, i);
+          execv(command, args);
+        }else{
+          fprintf(stderr, "%s: command not found\n", program_name);
         }
-        args[len] = NULL;
-
-        execv(command, args);
-        
         free(command);
         tokens_destroy(env_tok);
         exit(1);
 	    }else{
         wait(NULL);
-        //fprintf(stdout, "met child\n");
       }
     }
 
