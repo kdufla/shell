@@ -144,7 +144,7 @@ int main(unused int argc, unused char *argv[]) {
 
     int out_r = 0;
     char *out_file;
-
+    
     struct tokens *redir_out = tokenize_str(line, " > ");
     if(tokens_get_length(redir_out)>1){
       out_r++;
@@ -193,8 +193,9 @@ int main(unused int argc, unused char *argv[]) {
             outpath = getcwd(outpath, PATH_MAX);
             strcat(outpath, "/");
             strcat(outpath, out_file);
-            printf("%s\n",outpath);
-        		int outfd = open(outpath, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+            printf("%s, %d\n",out_file, (int)strlen(out_file));
+        		
+            int outfd = open(out_file, O_WRONLY | O_RDONLY | O_CREAT, 00600);
             dup2(outfd, STDOUT_FILENO);
             close(outfd);
           }
