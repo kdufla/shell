@@ -26,6 +26,7 @@ static void *copy_word(char *source, size_t n) {
   return word;
 }
 
+// check if delim is prefix of the line
 int check_match(char *line, char *delim){
   char *curr_delim = delim, *curr_line = line;
 
@@ -44,8 +45,9 @@ struct tokens *tokenize_str(const char *line, const char *delimiter){
   char *env_line = strdup(line), *delim = strdup(delimiter);
   struct tokens *tok = malloc(sizeof(struct tokens));
 	char *start = env_line, *curr = env_line;
-  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0';      
+  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0'; // remove new line character at the end of the line   
   
+  // count num of elems in tokens (spoiler: it's number of delimiter substrings in line + 1)
 	int len = 1;
 	while (*curr != '\0'){
 		if (check_match(curr, delim)){
@@ -57,10 +59,12 @@ struct tokens *tokenize_str(const char *line, const char *delimiter){
 	}
 	curr = env_line;
 
+  // initialize empty struct tokens with correct size
 	tok->tokens_length = len;
 	tok->tokens = malloc(sizeof(char *) * len);
   tok->buffers_length = 0;
 
+  // fill struct with tokens
 	int i = 0;
 	while (*curr != '\0'){
 		if (check_match(curr, delim)){
@@ -73,6 +77,7 @@ struct tokens *tokenize_str(const char *line, const char *delimiter){
     }
 	}
 	tok->tokens[i] = strdup(start);
+
 
   free(env_line);
   free(delim);

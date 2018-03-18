@@ -240,38 +240,39 @@ int execute(char* line){
     pid = fork();
 
     if (pid == 0){ // child
+      // get enviroment and search for requested program
       struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
       char* program_name = tokens_get_token(tokens, 0);
       char* command = search_program(env_tok, program_name);
 
-      if(command){
+      if(command){ // if program exsists
         size_t len = tokens_get_length(tokens);
         char* args[len+1];
 
-        // fill args with args from tokens
+        // fill args with passed arguments
         for(int i = 0; i<=len; i++){
           args[i] = tokens_get_token(tokens, i);
         }
         args[len] = NULL;
 
-        if(out_red){
-          int outfd = open(out_file, O_WRONLY | O_CREAT, 00600);
-          dup2(outfd, STDOUT_FILENO);
-          close(outfd);
-        }else if(out_red_app){
+        if(out_red){ // if user wants to redirect std out in file
+          int outfd = open(out_file, O_WRONLY | O_CREAT, 00600); // open new file write only and rw permissions for user 
+          dup2(outfd, STDOUT_FILENO); // redirect fd's
+          close(outfd); // close unused fd (file has 2 fd's (outfd and stdout) and we only need stdout)
+        }else if(out_red_app){ // redirect stdout to file (append)
           int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
           dup2(outfd, STDOUT_FILENO);
           close(outfd);
           
         }
 
-        if(in_red){
+        if(in_red){ // input redirection
           int infd = open(in_file, O_RDONLY);
           dup2(infd, STDIN_FILENO);
           close(infd);
         }
 
-        if(execv(command, args) == -1){
+        if(execv(command, args) == -1){ // if execution failed return 0 and print error
           ret = 0;
       		fprintf(stderr, "%s\n", strerror(errno));		
         }
@@ -318,6 +319,7 @@ int main(unused int argc, unused char *argv[]) {
     int skip = 0;
     int rv;
 
+    // iterate throught procedures and skip unnecessary ones
     while(cur){
       if(skip){
         skip--;
