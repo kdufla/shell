@@ -44,7 +44,7 @@ struct tokens *tokenize_str(const char *line, const char *delimiter){
   char *env_line = strdup(line), *delim = strdup(delimiter);
   struct tokens *tok = malloc(sizeof(struct tokens));
 	char *start = env_line, *curr = env_line;
-  start[strlen(start)-1] = '\0';      
+  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0';      
   
 	int len = 1;
 	while (*curr != '\0'){

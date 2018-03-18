@@ -18,6 +18,10 @@
 
 /* Convenience macro to silence compiler warnings about unused function parameters. */
 #define unused __attribute__((unused))
+#define AND 0
+#define OR 1
+#define false 0
+#define true 1
 
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
@@ -36,6 +40,12 @@ int cmd_help(struct tokens *tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
+
+typedef struct procedure{
+  char *command;
+  int logop;
+  struct procedure *next;
+}procedure;
 
 /* Built-in command struct and lookup table */
 typedef struct fun_desc {
@@ -131,6 +141,165 @@ void init_shell() {
   }
 }
 
+/* Build linked list of procedures (string of commands without logical operators) */
+struct procedure* build_procedure_list(char* line){
+  struct procedure *head, *cur, *prev;
+  
+  head = malloc(sizeof(struct procedure));
+  cur = head;
+
+  struct tokens *ortokens = tokenize_str(line, " || ");
+  for(int or = 0; or < tokens_get_length(ortokens); or++){
+
+    struct tokens *andtokens = tokenize_str(tokens_get_token(ortokens, or), " && ");
+
+    for(int and = 0; and < tokens_get_length(andtokens); and++){
+      cur->command = strdup(tokens_get_token(andtokens, and));
+      cur->logop = AND;
+      cur->next = malloc(sizeof(struct procedure));
+
+      prev = cur;
+      cur = cur->next;
+    }
+    prev->logop = OR;
+    tokens_destroy(andtokens);
+  }
+  free(prev->next);
+  prev->next = NULL;
+  tokens_destroy(ortokens);
+
+  return head;
+}
+
+/* Free memory used in procedure list */
+void destroy_procedure_list(procedure *proc){
+  procedure *cur = proc, *prev;
+
+  while(cur){
+    prev = cur;
+    cur = cur->next;
+    free(prev->command);
+    free(prev);
+  }
+
+}
+
+int execute(char* line){
+
+  char *actual_command;
+  char *out_file;
+  char *in_file;  
+  struct tokens *redir_out;
+  struct tokens *redir_out_app;
+  struct tokens *redir_in;
+  int ret = 1;
+
+  // check stdout redirect in file
+  int out_red = false;
+  int out_red_app = false;  
+  redir_out = tokenize_str(line, " > "); // search for  '>' symbol
+  if(tokens_get_length(redir_out) > 1){ // redirect needed
+    out_red = true;
+    out_file = strdup(tokens_get_token(redir_out, 1)); // name of output file
+    actual_command = strdup(tokens_get_token(redir_out, 0)); // rest of the command
+    line = actual_command;
+  }else{
+    redir_out_app = tokenize_str(line, " >> "); // search for  '>>' symbol
+    if(tokens_get_length(redir_out_app) > 1){ // redirect needed
+      out_red_app = true;
+      out_file = strdup(tokens_get_token(redir_out_app, 1)); // name of output file
+      actual_command = strdup(tokens_get_token(redir_out_app, 0)); // rest of the command
+      line = actual_command;
+    }else{
+      actual_command = line; // command doesn't contain output redirection
+    }
+  }
+
+  // check stdin redirect from file
+  int in_red = false;
+  redir_in = tokenize_str(line, " < "); // search for  '<' symbol
+  if(tokens_get_length(redir_in) > 1){ // redirect needed
+    in_red = true;
+    in_file = strdup(tokens_get_token(redir_in, 1)); // name of input file
+    actual_command = strdup(tokens_get_token(redir_in, 0)); // rest of the command
+  }else{
+    actual_command = line; // command doesn't contain input redirection
+  }
+
+  /* Split our line into words. */
+  struct tokens *tokens = tokenize(actual_command);
+
+  /* Find which built-in function to run. */
+  int fundex = lookup(tokens_get_token(tokens, 0));
+
+  if (fundex >= 0) {
+    cmd_table[fundex].fun(tokens);
+  } else {
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid == 0){ // child
+      struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
+      char* program_name = tokens_get_token(tokens, 0);
+      char* command = search_program(env_tok, program_name);
+
+      if(command){
+        size_t len = tokens_get_length(tokens);
+        char* args[len+1];
+
+        // fill args with args from tokens
+        for(int i = 0; i<=len; i++){
+          args[i] = tokens_get_token(tokens, i);
+        }
+        args[len] = NULL;
+
+        if(out_red){
+          int outfd = open(out_file, O_WRONLY | O_CREAT, 00600);
+          dup2(outfd, STDOUT_FILENO);
+          close(outfd);
+        }else if(out_red_app){
+          int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
+          dup2(outfd, STDOUT_FILENO);
+          close(outfd);
+          
+        }
+
+        if(in_red){
+          int infd = open(in_file, O_RDONLY);
+          dup2(infd, STDIN_FILENO);
+          close(infd);
+        }
+
+        if(execv(command, args) == -1){
+          ret = 0;
+      		fprintf(stderr, "%s\n", strerror(errno));		
+        }
+      }else{
+        fprintf(stderr, "%s: command not found\n", program_name);
+        ret = 0;
+      }
+      free(command);
+      tokens_destroy(env_tok);
+      exit(1);
+    }else{
+      wait(NULL);
+    }
+  }
+
+  // clean up
+  if(out_red || out_red_app) free(out_file);
+  if(in_red) free(in_file);  
+  tokens_destroy(redir_out);
+  if(!out_red)tokens_destroy(redir_out_app);
+  tokens_destroy(redir_in);
+  tokens_destroy(tokens);
+
+  return ret;
+}
+
+//#define DEBUG 1
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -142,90 +311,32 @@ int main(unused int argc, unused char *argv[]) {
     fprintf(stdout, "%d: ", line_num);
 
   while (fgets(line, 4096, stdin)) {
-    char *line_actual_command;
 
-    int out_r = 0;
-    char *out_file;
+    struct procedure *proc_list = build_procedure_list(line);
 
-    struct tokens *redir_out = tokenize_str(line, " > ");
-    if(tokens_get_length(redir_out) > 1){
-      out_r++;
-      out_file = strdup(tokens_get_token(redir_out, 1));
-      line_actual_command = strdup(tokens_get_token(redir_out, 0));
-    }else{
-      line_actual_command = line;
-    }
+    struct procedure *cur = proc_list;
+    int skip = 0;
+    int rv;
 
-    /* Split our line into words. */
-    struct tokens *tokens = tokenize(line_actual_command);
-
-    /* Find which built-in function to run. */
-    int fundex = lookup(tokens_get_token(tokens, 0));
-
-    if (fundex >= 0) {
-      cmd_table[fundex].fun(tokens);
-    } else {
-      pid_t pid;
-
-    	pid = fork();
-
-	    if (pid == 0){
-        struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
-
-        /*
-        for(int n =0; n<4;n++){
-          printf("%s\n", tokens_get_token(env_tok, n));
-        }
-        */
-        char* program_name = tokens_get_token(tokens, 0);
-        char* command = search_program(env_tok, program_name);
-
-        if(command){
-          size_t len = tokens_get_length(tokens);
-          char* args[len+1];
-
-          // fill args with args from tokens
-          for(int i = 0; i<=len; i++){
-            args[i] = tokens_get_token(tokens, i);
-          }
-          args[len] = NULL;
-
-          if(out_r){
-            char *outpath = (char*)malloc(PATH_MAX);
-            outpath = getcwd(outpath, PATH_MAX);
-            strcat(outpath, "/");
-            strcat(outpath, out_file);
-            //printf("%s, %d\n",out_file, (int)strlen(out_file));
-        		
-            int outfd = open(out_file, O_WRONLY | O_RDONLY | O_CREAT, 00600);
-            dup2(outfd, STDOUT_FILENO);
-            close(outfd);
-          }
-
-          execv(command, args);
-        }else{
-          fprintf(stderr, "%s: command not found\n", program_name);
-        }
-        free(command);
-        tokens_destroy(env_tok);
-        exit(1);
-	    }else{
-        wait(NULL);
+    while(cur){
+      if(skip){
+        skip--;
+      }else{
+        rv = execute(cur->command);
       }
+
+      if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){  
+        skip++;
+      }
+
+      cur = cur->next;
     }
+
+    destroy_procedure_list(proc_list);
 
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
-      fprintf(stdout, "%d: ", ++line_num);
-
-    /* Clean up memory */
-    tokens_destroy(tokens);
-        if(out_r){
-      free(line_actual_command);
-      free(out_file);
-    }
-    tokens_destroy(redir_out);    
-
+      fprintf(stdout, "%d: ", ++line_num); 
   }
 
   return 0;
