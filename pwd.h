@@ -1,3 +1,6 @@
+#ifndef __PWD__
+#define __PWD__
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -10,3 +13,5 @@
 #define unused __attribute__((unused))
 
 int cmd_pwd(unused struct tokens *tokens);
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef __ULIMIT__
+#define __ULIMIT__
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <string.h>
@@ -10,3 +13,5 @@
 #include "tokenizer.h"
 
 int cmd_ulimit(struct tokens *tokens);
+
+#endif
