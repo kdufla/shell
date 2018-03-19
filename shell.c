@@ -11,10 +11,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "nice.h"
 #include "ulimit.h"
 #include "pwd.h"
 #include "cd.h"
 #include "tokenizer.h"
+
+#include "shell.h"
 
 /* Convenience macro to silence compiler warnings about unused function parameters. */
 #define unused __attribute__((unused))
@@ -59,7 +62,8 @@ fun_desc_t cmd_table[] = {
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_pwd, "pwd", "print working directory"},
   {cmd_cd, "cd", "change directory"},
-  {cmd_ulimit, "ulimit", "user limits"}
+  {cmd_ulimit, "ulimit", "user limits"},
+  {cmd_nice, "nice", "run program with predefined nice value"}
 };
 
 /* Prints a helpful description for the given command */
@@ -144,7 +148,7 @@ void init_shell() {
 /* Build linked list of procedures (string of commands without logical operators) */
 struct procedure* build_procedure_list(char* line){
   struct procedure *head, *cur, *prev;
-  
+
   head = malloc(sizeof(struct procedure));
   cur = head;
 
@@ -184,11 +188,11 @@ void destroy_procedure_list(procedure *proc){
 
 }
 
-int execute(char* line){
+int execute(char* line, int nice_value){
 
   char *actual_command;
   char *out_file;
-  char *in_file;  
+  char *in_file;
   struct tokens *redir_out;
   struct tokens *redir_out_app;
   struct tokens *redir_in;
@@ -196,7 +200,7 @@ int execute(char* line){
 
   // check stdout redirect in file
   int out_red = false;
-  int out_red_app = false;  
+  int out_red_app = false;
   redir_out = tokenize_str(line, " > "); // search for  '>' symbol
   if(tokens_get_length(redir_out) > 1){ // redirect needed
     out_red = true;
@@ -256,14 +260,14 @@ int execute(char* line){
         args[len] = NULL;
 
         if(out_red){ // if user wants to redirect std out in file
-          int outfd = open(out_file, O_WRONLY | O_CREAT, 00600); // open new file write only and rw permissions for user 
+          int outfd = open(out_file, O_WRONLY | O_CREAT, 00600); // open new file write only and rw permissions for user
           dup2(outfd, STDOUT_FILENO); // redirect fd's
           close(outfd); // close unused fd (file has 2 fd's (outfd and stdout) and we only need stdout)
         }else if(out_red_app){ // redirect stdout to file (append)
           int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
           dup2(outfd, STDOUT_FILENO);
           close(outfd);
-          
+
         }
 
         if(in_red){ // input redirection
@@ -272,9 +276,13 @@ int execute(char* line){
           close(infd);
         }
 
+        if(nice_value > -21){
+          nice(nice_value);
+        }
+
         if(execv(command, args) == -1){ // if execution failed return 0 and print error
           ret = 0;
-      		fprintf(stderr, "%s\n", strerror(errno));		
+      		fprintf(stderr, "%s\n", strerror(errno));
         }
       }else{
         fprintf(stderr, "%s: command not found\n", program_name);
@@ -290,7 +298,7 @@ int execute(char* line){
 
   // clean up
   if(out_red || out_red_app) free(out_file);
-  if(in_red) free(in_file);  
+  if(in_red) free(in_file);
   tokens_destroy(redir_out);
   if(!out_red)tokens_destroy(redir_out_app);
   tokens_destroy(redir_in);
@@ -324,10 +332,10 @@ int main(unused int argc, unused char *argv[]) {
       if(skip){
         skip--;
       }else{
-        rv = execute(cur->command);
+        rv = execute(cur->command, -21);
       }
 
-      if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){  
+      if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){
         skip++;
       }
 
@@ -338,7 +346,7 @@ int main(unused int argc, unused char *argv[]) {
 
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
-      fprintf(stdout, "%d: ", ++line_num); 
+      fprintf(stdout, "%d: ", ++line_num);
   }
 
   return 0;
