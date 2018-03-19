@@ -8,20 +8,20 @@ typedef struct ulimit_resource {
 } ulimit_resource_t;
 
 ulimit_resource_t resource_dict[] = {
-  {'v', RLIMIT_AS,         "virtual memory          (kbytes, -v)", 1024},
-  {'c', RLIMIT_CORE,       "core file size          (blocks, -c)", 1   },
-  {'t', RLIMIT_CPU,        "cpu time               (seconds, -t)", 1   },
+  {'c', RLIMIT_CORE,       "core file size          (blocks, -c)", 1024},
   {'d', RLIMIT_DATA,       "data seg size           (kbytes, -d)", 1024},
-  {'f', RLIMIT_FSIZE,      "file size               (blocks, -f)", 1   },
-  {'l', RLIMIT_MEMLOCK,    "max locked memory       (kbytes, -l)", 1024},
-  {'q', RLIMIT_MSGQUEUE,   "POSIX message queues     (bytes, -q)", 1   },
   {'e', RLIMIT_NICE,       "scheduling priority             (-e)", 1   },
-  {'x', RLIMIT_LOCKS,      "file locks                      (-x)", 1   },
-  {'n', RLIMIT_NOFILE,     "open files                      (-n)", 1   },
-  {'u', RLIMIT_NPROC,      "max user processes              (-u)", 1   },
-  {'r', RLIMIT_RTPRIO,     "real-time priority              (-r)", 1   },
+  {'f', RLIMIT_FSIZE,      "file size               (blocks, -f)", 1024},
   {'i', RLIMIT_SIGPENDING, "pending signals                 (-i)", 1   },
-  {'s', RLIMIT_STACK,      "stack size              (kbytes, -s)", 1024}
+  {'l', RLIMIT_MEMLOCK,    "max locked memory       (kbytes, -l)", 1024},
+  {'n', RLIMIT_NOFILE,     "open files                      (-n)", 1   },
+  {'q', RLIMIT_MSGQUEUE,   "POSIX message queues     (bytes, -q)", 1   },
+  {'r', RLIMIT_RTPRIO,     "real-time priority              (-r)", 1   },
+  {'s', RLIMIT_STACK,      "stack size              (kbytes, -s)", 1024},
+  {'t', RLIMIT_CPU,        "cpu time               (seconds, -t)", 1   },
+  {'u', RLIMIT_NPROC,      "max user processes              (-u)", 1   },
+  {'v', RLIMIT_AS,         "virtual memory          (kbytes, -v)", 1024},
+  {'x', RLIMIT_LOCKS,      "file locks                      (-x)", 1   }
   // {'m', -1,                "max memory size         (kbytes, -m)", 1024},
   // {'p', -1,                "pipe size            (512 bytes, -p)", 512 }
 };
