@@ -122,7 +122,7 @@ int execute(char* line, int nice_value){
     pid = fork();
 
 		if(pid == -1){
-			fprintf(stderr, "%s\n", strerror(errno));		
+			fprintf(stderr, "%s\n", strerror(errno));
 			ret = -1;
 		}
 
@@ -159,7 +159,10 @@ int execute(char* line, int nice_value){
         }
 
         if(nice_value > -21){
-          nice(nice_value);
+          errno = 0;
+          if(nice(nice_value) == -1 && errno != 0) {
+            fprintf(stderr, "%s\n", "Do not have permission to set negative nice value");
+          }
         }
 
         if(execv(command, args) == -1){ // if execution failed return 0 and print error
