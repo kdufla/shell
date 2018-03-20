@@ -8,7 +8,8 @@ fun_desc_t cmd_table[] = {
   {cmd_pwd, "pwd", "print working directory"},
   {cmd_cd, "cd", "change directory"},
   {cmd_ulimit, "ulimit", "user limits"},
-  {cmd_nice, "nice", "run program with predefined nice value"}
+  {cmd_nice, "nice", "run program with predefined nice value"},
+  {cmd_echo, "echo", "print enviroment variable or string or last child process status"}
 };
 
 /* Prints a helpful description for the given command */

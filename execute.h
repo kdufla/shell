@@ -20,6 +20,7 @@
 #include "cd.h"
 #include "tokenizer.h"
 #include "bool.h"
+#include "echo.h"
 
 #define unused __attribute__((unused))
 
