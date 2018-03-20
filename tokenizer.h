@@ -4,7 +4,7 @@
 struct tokens;
 
 /* Turn a string into a list of words. */
-struct tokens *tokenize(const char *line, const char* delim);
+struct tokens *tokenize(const char *line);
 
 /* Tokenize using given delimiter string. */
 struct tokens *tokenize_str(const char *line, const char *delim);
