@@ -36,17 +36,17 @@ int check_match(char *line, char *delim){
       curr_line++;
     }else{
       return 0;
-    }      
+    }
   }
   return 1;
 }
 
-struct tokens *tokenize_str(const char *line, const char *delimiter){  
+struct tokens *tokenize_str(const char *line, const char *delimiter){
   char *env_line = strdup(line), *delim = strdup(delimiter);
   struct tokens *tok = malloc(sizeof(struct tokens));
 	char *start = env_line, *curr = env_line;
-  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0'; // remove new line character at the end of the line   
-  
+  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0'; // remove new line character at the end of the line
+
   // count num of elems in tokens (spoiler: it's number of delimiter substrings in line + 1)
 	int len = 1;
 	while (*curr != '\0'){
@@ -172,6 +172,30 @@ char *tokens_get_token(struct tokens *tokens, size_t n) {
   } else {
     return tokens->tokens[n];
   }
+}
+
+char *tokens_get_substring(struct tokens *tokens, int start_index, int end_index, char *delim){
+  int line_len = 1;
+  for (int i = start_index; i < end_index; i++) {
+    line_len += strlen(tokens_get_token(tokens, i)) + strlen(delim);
+  }
+  line_len -= strlen(delim);
+  char* line = (char*)malloc(line_len);
+  char *dest = line;
+  for (int i = start_index; i < end_index; i++) {
+    char *src = tokens_get_token(tokens, i);
+    while (*src) {
+      *dest++ = *src++;
+    }
+    if (i < end_index - 1) {
+      char *temp_delim = delim;
+      while (*temp_delim) {
+        *dest++ = *temp_delim++;
+      }
+    }
+  }
+  *dest = '\0';
+  return line;
 }
 
 void tokens_destroy(struct tokens *tokens) {
