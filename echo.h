@@ -1,3 +1,6 @@
+#ifndef __ECHO__
+#define __ECHO__
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <string.h>
@@ -15,4 +18,6 @@ int last_status;
 
 int cmd_echo(struct tokens *tokens);
 
-void cleanUp();
+void echo_clean_up();
+
+#endif
