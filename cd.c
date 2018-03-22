@@ -4,7 +4,8 @@ int cmd_cd(struct tokens *tokens){
 	char *path = tokens_get_token(tokens, 1);
 	int rv = chdir(path);
 	if(rv == -1){
-		fprintf(stderr, "%s\n", strerror(errno));		
+		fprintf(stderr, "%s\n", strerror(errno));
+		return 1;		
 	}
-	return rv;
+	return 0;
 }
