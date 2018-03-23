@@ -22,7 +22,7 @@ int cmd_help(unused struct tokens *tokens) {
 
 /* Exits this shell */
 int cmd_exit(unused struct tokens *tokens) {
-  exit(17);
+  exit(0);
 }
 
 int get_last_child(){
@@ -52,26 +52,29 @@ int lookup(char cmd[]) {
   return -1;
 }
 
-char* search_program(struct tokens* tokens, char* program){
+char* search_program(struct tokens* tokens){
+  struct tokens* env_tokens = tokenize_str(getenv("PATH"), ":");
+  char* program = tokens_get_token(tokens, 0);
+
   if(check_file(program)){
-    return program;
+    return strdup(program);
   }else{
-    for(int i = 0; i < tokens_get_length(tokens); i++){
-      char* path = concat_for_path(tokens_get_token(tokens, i), program);
+    for(int i = 0; i < tokens_get_length(env_tokens); i++){
+      char* path = concat_for_path(tokens_get_token(env_tokens, i), program);
       if(check_file(path)){
+        tokens_destroy(env_tokens);
         return path;
       }else{
         free(path);
       }
     }
   }
+  tokens_destroy(env_tokens);  
   return NULL;
 }
 
 void get_io(char **line, char **actual_command, char **out_file, char **in_file, int *out_red, int *out_red_app, int *in_red){
-  struct tokens *redir_out;
-  struct tokens *redir_out_app;
-  struct tokens *redir_in;
+  struct tokens *redir_out = NULL, *redir_out_app = NULL, *redir_in = NULL;
 
   // check stdout redirect in file
   redir_out = tokenize_str(*line, " > "); // search for  '>' symbol
@@ -103,15 +106,157 @@ void get_io(char **line, char **actual_command, char **out_file, char **in_file,
   }
 
   tokens_destroy(redir_out);
-  if(!out_red)tokens_destroy(redir_out_app);
+  tokens_destroy(redir_out_app);
   tokens_destroy(redir_in);
+}
+
+char** generate_args_for_exec(struct tokens *tk, char** buf){
+  int len = tokens_get_length(tk);
+  for(int i = 0; i<=len; i++){
+    buf[i] = tokens_get_token(tk, i);
+  }
+  buf[len] = NULL;
+  return buf;
+}
+
+void set_nice(int nice_value){
+  if(nice_value > -21){
+    errno = 0;
+    if(nice(nice_value) == -1 && errno != 0) {
+      fprintf(stderr, "%s\n", "Do not have permission to set negative nice value");
+    }
+  }
+}
+
+int try_redirectin_in_file(int out_red, int out_red_app, char* out_file){
+  if(out_red){ // if user wants to redirect std out in file
+    int outfd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 00600); // open new file write only and rw permissions for user
+    if(outfd == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      return 1;
+    }
+    dup2(outfd, STDOUT_FILENO); // redirect fd's
+    close(outfd); // close unused fd (file has 2 fd's (outfd and stdout) and we only need stdout)
+    return 0;
+  }else if(out_red_app){ // redirect stdout to file (append)
+    int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
+    if(outfd == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      return 1;
+    }
+    dup2(outfd, STDOUT_FILENO);
+    close(outfd);
+    return 0;
+  }
+  return 0;
+}
+
+int try_reading_from_file(int in_red, char *in_file){
+  if(in_red){ // input redirection
+    int infd = open(in_file, O_RDONLY);
+    if(infd == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      return 1;
+    }
+    dup2(infd, STDIN_FILENO);
+    close(infd);
+    return 0;
+  }
+  return 0;
+}
+
+int run_builtin_inside_current_proccess(int fundex, int in_red, int out_red, int out_red_app, char *in_file, char *out_file, struct tokens *tokens){
+  int savein = dup(STDIN_FILENO), saveout = dup(STDOUT_FILENO); // save std in and out
+    
+  if(try_reading_from_file(in_red, in_file) == 0 && try_redirectin_in_file(out_red, out_red_app, out_file) == 0){
+    int rv = cmd_table[fundex].fun(tokens);
+
+    dup2(savein, STDIN_FILENO); // restore stdin
+    close(savein);
+
+    dup2(saveout, STDOUT_FILENO); // restore stdout
+    close(saveout);
+
+    return rv;
+  }else{
+    return 1;
+  }
+}
+
+int child_redirections(int first, int last, int in_red, int out_red, int out_red_app, int in, int out, char* in_file, char* out_file){
+  if(first && try_reading_from_file(in_red, in_file)){
+    return 1;
+  }
+  
+  if(last && try_redirectin_in_file(out_red, out_red_app, out_file)){
+    return 1;
+  }
+
+  if(!first){
+    dup2 (in, 0);
+    close (in);
+  }
+
+  if(!last){
+    dup2 (out, 1);
+    close (out);
+  }
+
+  return 0;
+}
+
+/*
+ * spawn child procces and exec command in it
+ * return child's pid
+ * if command only used built-in function return 0
+ * if error return -1
+ */
+int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int out_red_app, char* out_file, int in_red, char *in_file, int execmode, int in, int out, int first, int last){
+  
+  if (fundex >= 0 && execmode == NORMAL_EXEC) {
+    return run_builtin_inside_current_proccess(fundex, in_red, out_red, out_red_app, in_file, out_file, tokens);
+  }
+
+  pid_t pid = fork();
+
+  if(pid == -1){
+    fprintf(stderr, "%s\n", strerror(errno));
+    return -1;
+  }
+
+  if (pid == 0){ // child
+    if(child_redirections(first, last, in_red, out_red, out_red_app, in, out, in_file, out_file)){
+      _exit(EXIT_FAILURE);
+    }
+
+    if (fundex >= 0) {
+      if(execmode == REDIR_EXEC){
+        _exit(cmd_table[fundex].fun(tokens) == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
+      }
+    }else{
+      // get enviroment and search for requested program
+      char* command = search_program(tokens);
+
+      if(command){ // if program exsists
+        size_t len = tokens_get_length(tokens);
+        char* args[len+1];
+        generate_args_for_exec(tokens, args); // generate char* of arguments from tokenizers content
+        set_nice(nice_value); // set nice value
+        execv(command, args); // execute command
+        fprintf(stderr, "%s\n", strerror(errno)); // if we get here, something went wrong
+      }else{
+        fprintf(stderr, "Command not found\n");
+      }
+      free(command);      
+      _exit(EXIT_FAILURE);
+    }
+  }
+  return pid;
 }
 
 int execute(char* line, int nice_value){
 
-  char *pipe_command;
-  char *out_file;
-  char *in_file;
+  char *pipe_command = NULL, *out_file = NULL, *in_file = NULL;
   int ret = 1;
   int out_red = false;
   int out_red_app = false;
@@ -121,21 +266,28 @@ int execute(char* line, int nice_value){
 
   struct tokens *piper = tokenize_str(pipe_command, " | ");
 
-  pid_t pid;
+  int piplen = tokens_get_length(piper);
+
+
   int fd[2];
   int in_fd = STDIN_FILENO;
 
   for(int i = 0; i < tokens_get_length(piper); i++){
 
+<<<<<<< HEAD
     int pip = pipe(fd);
 
     pid = fork();
 
     if(pid == -1){
+=======
+    if(pipe(fd) == -1){
+>>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
       fprintf(stderr, "%s\n", strerror(errno));
       ret = 1;
     }
 
+<<<<<<< HEAD
     if(pip == -1){
 			fprintf(stderr, "%s\n", strerror(errno));
       ret = 1;
@@ -167,15 +319,22 @@ int execute(char* line, int nice_value){
       }
 
       /* Split our line into words. */
+=======
+    /* Split our line into words. */
+>>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
       struct tokens *tokens = tokenize(tokens_get_token(piper, i));
 
       /* Find which built-in function to run. */
       int fundex = lookup(tokens_get_token(tokens, 0));
+      int execmode = (piplen == 1/* && !out_red && !out_red_app && !in_red*/) ? NORMAL_EXEC : REDIR_EXEC;
 
-      if (fundex >= 0) {
-        cmd_table[fundex].fun(tokens);
-      }else{
+      spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1);
 
+      close(fd[1]);
+
+      in_fd = fd[0];
+
+<<<<<<< HEAD
         // get enviroment and search for requested program
         struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
         char* program_name = tokens_get_token(tokens, 0);
@@ -219,11 +378,26 @@ int execute(char* line, int nice_value){
       last_child = WEXITSTATUS(rs);
       if(last_child == 17) exit(0);
     }
+=======
+      tokens_destroy(tokens);
+>>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
   }
+
+  for(int i = 0; i < tokens_get_length(piper); i++){
+    int rs;
+    wait(&rs);
+    last_child = WEXITSTATUS(rs);
+  } 
+
+  // for(int i=0; i<piplen; i++){
+  //   int rs;
+  //   wait(&rs);
+  // }
 
   // clean up
   if(out_red || out_red_app) free(out_file);
   if(in_red) free(in_file);
+  tokens_destroy(piper);
 
   return ret;
 }

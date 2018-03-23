@@ -24,6 +24,8 @@
 #include "echo.h"
 
 #define unused __attribute__((unused))
+#define NORMAL_EXEC 0
+#define REDIR_EXEC 1
 
 int get_last_child();
 

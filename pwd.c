@@ -7,7 +7,7 @@ int cmd_pwd(unused struct tokens *tokens){
 	if(!path){ // handle error
 		free(path);
 		fprintf(stderr, "%s\n", strerror(errno));
-		return -1;
+		return 1;
 	}else{
 		fprintf(stdout, "%s\n", path);	
 		free(path);
