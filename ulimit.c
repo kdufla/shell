@@ -42,15 +42,6 @@ int resource_lookup(char symbol) {
   return -1;
 }
 
-int is_number(char *string){
-  for (int i = 0; i < strlen(string); i++){
-    if ( !isdigit(string[i]) ){
-      return -1;
-    }
-  }
-  return 0;
-}
-
 int cmd_ulimit(struct tokens *tokens){
   size_t args_len = tokens_get_length(tokens);
   ulimit_value_t values[14]; // Can be optimized using malloc
@@ -126,7 +117,7 @@ int cmd_ulimit(struct tokens *tokens){
         rv = -1;
       }
     }
-    else if ( a_is_met == -1 && (strcmp(arg, "unlimited") == 0 || is_number(arg) == 0) ) {
+    else if ( a_is_met == -1 && (strcmp(arg, "unlimited") == 0 || is_real_number(arg) == 0) ) {
       if (value_i > 0 && values[value_i-1].used == 0) {
         uintmax_t num;
         if (strcmp(arg, "unlimited") == 0) {

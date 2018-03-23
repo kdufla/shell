@@ -1,5 +1,5 @@
-#ifndef __NICE__
-#define __NICE__
+#ifndef __RENICE__
+#define __RENICE__
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -12,8 +12,7 @@
 
 #include "util.h"
 #include "tokenizer.h"
-#include "execute.h"
 
-int cmd_nice(struct tokens *tokens);
+int cmd_renice(struct tokens *tokens);
 
 #endif

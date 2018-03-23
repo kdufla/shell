@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 
+#include "util.h"
 #include "tokenizer.h"
 
 int cmd_ulimit(struct tokens *tokens);

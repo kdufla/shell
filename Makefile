@@ -1,4 +1,4 @@
-SRCS=shell.c tokenizer.c cd.c pwd.c ulimit.c nice.c execute.c echo.c
+SRCS=shell.c tokenizer.c util.c cd.c pwd.c ulimit.c nice.c execute.c echo.c renice.c
 EXECUTABLES=shell
 
 CC=gcc

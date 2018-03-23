@@ -9,6 +9,7 @@ fun_desc_t cmd_table[] = {
   {cmd_cd, "cd", "change directory"},
   {cmd_ulimit, "ulimit", "user limits"},
   {cmd_nice, "nice", "run program with predefined nice value"},
+  {cmd_renice, "renice", "change priority of running process"},
   {cmd_echo, "echo", "print enviroment variable or string or last child process status"}
 };
 
@@ -100,7 +101,7 @@ void get_io(char **line, char **actual_command, char **out_file, char **in_file,
   }else{
     *actual_command = *line; // command doesn't contain input redirection
   }
-  
+
   tokens_destroy(redir_out);
   if(!out_red)tokens_destroy(redir_out_app);
   tokens_destroy(redir_in);
@@ -127,7 +128,7 @@ int execute(char* line, int nice_value){
   for(int i = 0; i < tokens_get_length(piper); i++){
 
     int pip = pipe(fd);
-    
+
     pid = fork();
 
     if(pid == -1){
@@ -141,7 +142,7 @@ int execute(char* line, int nice_value){
 		}
 
     if (pid == 0){ // child
-      
+
       close(fd[0]);
       dup2(in_fd, STDIN_FILENO); // change in
 
@@ -158,7 +159,7 @@ int execute(char* line, int nice_value){
           close(outfd);
         }
       }
-      
+
       if(i == 0 && in_red){ // input redirection
         int infd = open(in_file, O_RDONLY);
         dup2(infd, STDIN_FILENO);
@@ -190,7 +191,7 @@ int execute(char* line, int nice_value){
           }
           args[len] = NULL;
 
-          
+
 
           if(nice_value > -21){
             errno = 0;
@@ -211,7 +212,7 @@ int execute(char* line, int nice_value){
         tokens_destroy(env_tok);
       }
       tokens_destroy(tokens);
-      exit(ret);        
+      exit(ret);
     }else{
       int rs;
       wait(&rs);
@@ -226,4 +227,3 @@ int execute(char* line, int nice_value){
 
   return ret;
 }
-

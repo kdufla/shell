@@ -1,38 +1,5 @@
 #include "nice.h"
 
-int is_integer(char *string){
-  int start = 0;
-  if (string[0] == '-') {
-    start++;
-  }
-  for (int i = start; i < strlen(string); i++){
-    if ( !isdigit(string[i]) ){
-      return -1;
-    }
-  }
-  return 0;
-}
-
-
-// TODO move this function to tokenize and make it more general
-// char *actual_command(struct tokens *tokens, int start, int end){
-//   int line_len = 0;
-//   for (int i = start; i < end; i++) {
-//     line_len += strlen(tokens_get_token(tokens, i)) + 1;
-//   }
-//   char* line = (char*)malloc(line_len);
-//   char *dest = line;
-//   for (int i = start; i < end; i++) {
-//     char *src = tokens_get_token(tokens, i);
-//     while (*src) {
-//       *dest++ = *src++;
-//     }
-//     *dest++ = ' ';
-//   }
-//   *dest = '\0';
-//   return line;
-// }
-
 int cmd_nice(struct tokens *tokens){
   size_t args_len = tokens_get_length(tokens);
   int priority = getpriority(PRIO_PROCESS, 0);
