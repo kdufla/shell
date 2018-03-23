@@ -69,7 +69,7 @@ char* search_program(struct tokens* tokens){
       }
     }
   }
-  tokens_destroy(env_tokens);  
+  tokens_destroy(env_tokens);
   return NULL;
 }
 
@@ -167,7 +167,7 @@ int try_reading_from_file(int in_red, char *in_file){
 
 int run_builtin_inside_current_proccess(int fundex, int in_red, int out_red, int out_red_app, char *in_file, char *out_file, struct tokens *tokens){
   int savein = dup(STDIN_FILENO), saveout = dup(STDOUT_FILENO); // save std in and out
-    
+
   if(try_reading_from_file(in_red, in_file) == 0 && try_redirectin_in_file(out_red, out_red_app, out_file) == 0){
     int rv = cmd_table[fundex].fun(tokens);
 
@@ -187,7 +187,7 @@ int child_redirections(int first, int last, int in_red, int out_red, int out_red
   if(first && try_reading_from_file(in_red, in_file)){
     return 1;
   }
-  
+
   if(last && try_redirectin_in_file(out_red, out_red_app, out_file)){
     return 1;
   }
@@ -212,7 +212,7 @@ int child_redirections(int first, int last, int in_red, int out_red, int out_red
  * if error return -1
  */
 int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int out_red_app, char* out_file, int in_red, char *in_file, int execmode, int in, int out, int first, int last){
-  
+
   if (fundex >= 0 && execmode == NORMAL_EXEC) {
     return run_builtin_inside_current_proccess(fundex, in_red, out_red, out_red_app, in_file, out_file, tokens);
   }
@@ -247,7 +247,7 @@ int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int ou
       }else{
         fprintf(stderr, "Command not found\n");
       }
-      free(command);      
+      free(command);
       _exit(EXIT_FAILURE);
     }
   }
@@ -274,54 +274,12 @@ int execute(char* line, int nice_value){
 
   for(int i = 0; i < tokens_get_length(piper); i++){
 
-<<<<<<< HEAD
-    int pip = pipe(fd);
-
-    pid = fork();
-
-    if(pid == -1){
-=======
     if(pipe(fd) == -1){
->>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
       fprintf(stderr, "%s\n", strerror(errno));
       ret = 1;
     }
 
-<<<<<<< HEAD
-    if(pip == -1){
-			fprintf(stderr, "%s\n", strerror(errno));
-      ret = 1;
-		}
-
-    if (pid == 0){ // child
-
-      close(fd[0]);
-      dup2(in_fd, STDIN_FILENO); // change in
-
-      if(i+1 != tokens_get_length(piper)){
-        dup2(fd[1], STDOUT_FILENO); // change out
-      }else{
-        if(out_red){ // if user wants to redirect std out in file
-          int outfd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 00600); // open new file write only and rw permissions for user
-          dup2(outfd, STDOUT_FILENO); // redirect fd's
-          close(outfd); // close unused fd (file has 2 fd's (outfd and stdout) and we only need stdout)
-        }else if(out_red_app){ // redirect stdout to file (append)
-          int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
-          dup2(outfd, STDOUT_FILENO);
-          close(outfd);
-        }
-      }
-
-      if(i == 0 && in_red){ // input redirection
-        int infd = open(in_file, O_RDONLY);
-        dup2(infd, STDIN_FILENO);
-        close(infd);
-      }
-
-      /* Split our line into words. */
-=======
     /* Split our line into words. */
->>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
       struct tokens *tokens = tokenize(tokens_get_token(piper, i));
 
       /* Find which built-in function to run. */
@@ -334,60 +292,14 @@ int execute(char* line, int nice_value){
 
       in_fd = fd[0];
 
-<<<<<<< HEAD
-        // get enviroment and search for requested program
-        struct tokens* env_tok = tokenize_str(getenv("PATH"), ":");
-        char* program_name = tokens_get_token(tokens, 0);
-        char* command = search_program(env_tok, program_name);
-
-        if(command){ // if program exsists
-          size_t len = tokens_get_length(tokens);
-          char* args[len+1];
-
-          // fill args with passed arguments
-          for(int i = 0; i<=len; i++){
-            args[i] = tokens_get_token(tokens, i);
-          }
-          args[len] = NULL;
-
-
-
-          if(nice_value > -21){
-            errno = 0;
-            if(nice(nice_value) == -1 && errno != 0) {
-              fprintf(stderr, "%s\n", "Do not have permission to set negative nice value");
-            }
-          }
-
-          if(execv(command, args) == -1){ // if execution failed return 0 and print error
-            ret = 0;
-            fprintf(stderr, "%s\n", strerror(errno));
-          }
-        }else{
-          fprintf(stderr, "%s: command not found\n", program_name);
-          ret = 1;
-        }
-        free(command);
-        tokens_destroy(env_tok);
-      }
       tokens_destroy(tokens);
-      exit(ret);
-    }else{
-      int rs;
-      wait(&rs);
-      last_child = WEXITSTATUS(rs);
-      if(last_child == 17) exit(0);
-    }
-=======
-      tokens_destroy(tokens);
->>>>>>> 2d76ab238d9269aa120df17858fa5355632d90ba
   }
 
   for(int i = 0; i < tokens_get_length(piper); i++){
     int rs;
     wait(&rs);
     last_child = WEXITSTATUS(rs);
-  } 
+  }
 
   // for(int i=0; i<piplen; i++){
   //   int rs;
