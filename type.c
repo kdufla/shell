@@ -2,19 +2,29 @@
 #include <assert.h>
 
 my_node* search_all_program(struct tokens* tokens, char* program){
-	my_node* head = malloc(sizeof(my_node*));
-	head = NULL;
+	my_node *head = malloc(sizeof(my_node)), *cur, *prev;
+	//prev = head;
+	cur = head;
+	int count = 0;
     for(int i = 0; i < tokens_get_length(tokens); i++){
       char* path = concat_for_path(tokens_get_token(tokens, i), program);
       if(check_file(path)){
-        my_node* tmp = malloc(sizeof(my_node));
-		tmp->word = path;
-		tmp->next = NULL;
-		tmp->next = head;
-		head = tmp;
+        //my_node* tmp = malloc(sizeof(my_node));
+		cur->word = path;
+		cur->next = malloc(sizeof(my_node));
+		prev = cur;
+		cur = cur->next;
+		count++;
       }else{
         free(path);
       }
+	  
+	}
+	free(cur);
+	if(count > 0){
+		prev->next = NULL;
+	}else{
+		head = NULL;
 	}
 	return head;
 }
