@@ -14,7 +14,7 @@ int cmd_nice(struct tokens *tokens){
       line = tokens_get_substring(tokens, 3, args_len, " ");
     }
     else if (strlen(arg) > 1 && arg[0] == '-' && arg[1] == '-') {
-      struct tokens *option = tokenize_str(arg, "=");
+      struct tokens *option = tokenize(arg, "=");
       if (tokens_get_length(option) == 2 && strcmp(tokens_get_token(option, 0), "--adjustment") == 0) {
         value = tokens_get_token(option, 1);
         line = tokens_get_substring(tokens, 2, args_len, " ");

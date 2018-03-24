@@ -54,7 +54,7 @@ int lookup(char cmd[]) {
 }
 
 char* search_program(struct tokens* tokens){
-  struct tokens* env_tokens = tokenize_str(getenv("PATH"), ":");
+  struct tokens* env_tokens = tokenize(getenv("PATH"), ":");
   char* program = tokens_get_token(tokens, 0);
 
   if(check_file(program)){
@@ -78,14 +78,14 @@ void get_io(char **line, char **actual_command, char **out_file, char **in_file,
   struct tokens *redir_out = NULL, *redir_out_app = NULL, *redir_in = NULL;
 
   // check stdout redirect in file
-  redir_out = tokenize_str(*line, " > "); // search for  '>' symbol
+  redir_out = tokenize(*line, " > "); // search for  '>' symbol
   if(tokens_get_length(redir_out) > 1){ // redirect needed
     *out_red = true;
     *out_file = strdup(tokens_get_token(redir_out, 1)); // name of output file
     *actual_command = strdup(tokens_get_token(redir_out, 0)); // rest of the command
     *line = *actual_command;
   }else{
-    redir_out_app = tokenize_str(*line, " >> "); // search for  '>>' symbol
+    redir_out_app = tokenize(*line, " >> "); // search for  '>>' symbol
     if(tokens_get_length(redir_out_app) > 1){ // redirect needed
       *out_red_app = true;
       *out_file = strdup(tokens_get_token(redir_out_app, 1)); // name of output file
@@ -97,7 +97,7 @@ void get_io(char **line, char **actual_command, char **out_file, char **in_file,
   }
 
   // check stdin redirect from file
-  redir_in = tokenize_str(*line, " < "); // search for  '<' symbol
+  redir_in = tokenize(*line, " < "); // search for  '<' symbol
   if(tokens_get_length(redir_in) > 1){ // redirect needed
     *in_red = true;
     *in_file = strdup(tokens_get_token(redir_in, 1)); // name of input file
@@ -265,7 +265,7 @@ int execute(char* line, int nice_value){
 
   get_io(&line, &pipe_command, &out_file, &in_file, &out_red, &out_red_app, &in_red);
 
-  struct tokens *piper = tokenize_str(pipe_command, " | ");
+  struct tokens *piper = tokenize(pipe_command, " | ");
 
   int piplen = tokens_get_length(piper);
 
@@ -281,7 +281,7 @@ int execute(char* line, int nice_value){
     }
 
     /* Split our line into words. */
-      struct tokens *tokens = tokenize(tokens_get_token(piper, i));
+      struct tokens *tokens = tokenize(tokens_get_token(piper, i), "");
 
       /* Find which built-in function to run. */
       int fundex = lookup(tokens_get_token(tokens, 0));

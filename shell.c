@@ -69,10 +69,10 @@ struct procedure* build_procedure_list(char* line){
   head = malloc(sizeof(struct procedure));
   cur = head;
 
-  struct tokens *ortokens = tokenize_str(line, " || ");
+  struct tokens *ortokens = tokenize(line, " || ");
   for(int or = 0; or < tokens_get_length(ortokens); or++){
 
-    struct tokens *andtokens = tokenize_str(tokens_get_token(ortokens, or), " && ");
+    struct tokens *andtokens = tokenize(tokens_get_token(ortokens, or), " && ");
 
     for(int and = 0; and < tokens_get_length(andtokens); and++){
       cur->command = strdup(tokens_get_token(andtokens, and));

@@ -27,8 +27,8 @@ static void *copy_word(char *source, size_t n) {
 }
 
 // check if delim is prefix of the line
-int check_match(char *line, char *delim){
-  char *curr_delim = delim, *curr_line = line;
+int check_match(const char *line, const char *delim){
+  const char *curr_delim = delim, *curr_line = line;
 
   while(*curr_delim != '\0'){
     if(*curr_delim == *curr_line){
@@ -41,59 +41,19 @@ int check_match(char *line, char *delim){
   return 1;
 }
 
-struct tokens *tokenize_str(const char *line, const char *delimiter){
-  char *env_line = strdup(line), *delim = strdup(delimiter);
-  struct tokens *tok = malloc(sizeof(struct tokens));
-	char *start = env_line, *curr = env_line;
-  while(start[strlen(start)-1] == '\n') start[strlen(start)-1] = '\0'; // remove new line character at the end of the line
-
-  // count num of elems in tokens (spoiler: it's number of delimiter substrings in line + 1)
-	int len = 1;
-	while (*curr != '\0'){
-		if (check_match(curr, delim)){
-			len++;
-  		curr += strlen(delim);
-    }else{
-		  curr++;
-    }
-	}
-	curr = env_line;
-
-  // initialize empty struct tokens with correct size
-	tok->tokens_length = len;
-	tok->tokens = malloc(sizeof(char *) * len);
-  tok->buffers_length = 0;
-
-  // fill struct with tokens
-	int i = 0;
-	while (*curr != '\0'){
-		if (check_match(curr, delim)){
-			*curr = '\0';
-			tok->tokens[i++] = strdup(start);
-  		curr += strlen(delim);
-			start = curr;
-		}else{
-		  curr++;
-    }
-	}
-	tok->tokens[i] = strdup(start);
-
-
-  free(env_line);
-  free(delim);
-
-  return tok;
-}
-
-struct tokens *tokenize(const char *line) {
+struct tokens *tokenize(const char *line, const char* delim) {
   if (line == NULL) {
     return NULL;
   }
+
 
   static char token[4096];
   size_t n = 0, n_max = 4096;
   struct tokens *tokens;
   size_t line_length = strlen(line);
+
+  if(line[strlen(line)-1]=='\n')
+    line_length--;
 
   tokens = (struct tokens *) malloc(sizeof(struct tokens));
   tokens->tokens_length = 0;
@@ -106,28 +66,39 @@ struct tokens *tokenize(const char *line) {
         MODE_DQUOTE = 2;
   int mode = MODE_NORMAL;
 
+
   for (unsigned int i = 0; i < line_length; i++) {
     char c = line[i];
     if (mode == MODE_NORMAL) {
       if (c == '\'') {
+        token[n++] = c;
         mode = MODE_SQUOTE;
       } else if (c == '"') {
+        token[n++] = c;
         mode = MODE_DQUOTE;
       } else if (c == '\\') {
         if (i + 1 < line_length) {
           token[n++] = line[++i];
         }
-      } else if (isspace(c)) {
-        if (n > 0) {
-          void *word = copy_word(token, n);
-          vector_push(&tokens->tokens, &tokens->tokens_length, word);
-          n = 0;
-        }
       } else {
-        token[n++] = c;
+        int skip = -1;
+        if (delim[0] == '\0' && isspace(c)) skip = 0;
+        if (delim[0] != '\0' && check_match(&line[i], delim)) skip = strlen(delim)-1;
+
+        if(skip != -1){
+          if (n > 0) {
+            void *word = copy_word(token, n);
+            vector_push(&tokens->tokens, &tokens->tokens_length, word);
+            n = 0;
+          }
+          i += skip;
+        }else {
+          token[n++] = c;
+        }
       }
     } else if (mode == MODE_SQUOTE) {
       if (c == '\'') {
+        token[n++] = c;
         mode = MODE_NORMAL;
       } else if (c == '\\') {
         if (i + 1 < line_length) {
@@ -138,6 +109,7 @@ struct tokens *tokenize(const char *line) {
       }
     } else if (mode == MODE_DQUOTE) {
       if (c == '"') {
+        token[n++] = c;
         mode = MODE_NORMAL;
       } else if (c == '\\') {
         if (i + 1 < line_length) {
@@ -155,6 +127,8 @@ struct tokens *tokenize(const char *line) {
     vector_push(&tokens->tokens, &tokens->tokens_length, word);
     n = 0;
   }
+  // printf("line:%s, delim:%s.\n", line, delim);
+  // mainc(tokens);
   return tokens;
 }
 
