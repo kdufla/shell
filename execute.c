@@ -3,14 +3,15 @@
 static int last_child = 0;
 
 fun_desc_t cmd_table[] = {
-  {cmd_help, "?", "show this help menu"},
-  {cmd_exit, "exit", "exit the command shell"},
-  {cmd_pwd, "pwd", "print working directory"},
-  {cmd_cd, "cd", "change directory"},
-  {cmd_ulimit, "ulimit", "user limits"},
-  {cmd_nice, "nice", "run program with predefined nice value"},
-  {cmd_renice, "renice", "change priority of running process"},
-  {cmd_echo, "echo", "print enviroment variable or string or last child process status"}
+  {cmd_help, "?", "show this help menu\n"},
+  {cmd_exit, "exit", "exit the command shell\n"},
+  {cmd_pwd, "pwd", "print working directory\n"},
+  {cmd_cd, "cd", "change directory\n"},
+  {cmd_ulimit, "ulimit", "user limits\n\tusage: ulimit [-SHabcdefilnqrstuvx] [limit]\n"},
+  {cmd_nice, "nice", "run program with predefined nice value\n\tusage: nice -n | --adjustment <priority> <program>\n"},
+  {cmd_renice, "renice", "change priority of running process\n\tusage: renice [-n] <priority> [-p] <process id> [-g <group id>] [-u <user id>]\n"},
+  {cmd_kill, "kill", "send signals to processes\n\tusage: kill -s <signal> | --signal <signal> | -<signal> <process id> | -<user id> | 0\n\t       kill -l | --list\n"},
+  {cmd_echo, "echo", "print enviroment variable or string or last child process status\n"}
 };
 
 /* Prints a helpful description for the given command */

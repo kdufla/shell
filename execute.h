@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "kill.h"
 #include "renice.h"
 #include "nice.h"
 #include "ulimit.h"

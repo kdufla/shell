@@ -35,10 +35,11 @@ typedef struct ulimit_value {
 } ulimit_value_t;
 
 int resource_lookup(char symbol) {
-  for (unsigned int i = 0; i < sizeof(resource_dict); i++)
+  for (unsigned int i = 0; i < sizeof(resource_dict) / sizeof(ulimit_resource_t); i++) {
     if (symbol == resource_dict[i].symbol) {
       return i;
     }
+  }
   return -1;
 }
 

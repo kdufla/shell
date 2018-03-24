@@ -6,7 +6,7 @@ int cmd_renice(struct tokens *tokens) {
   int gid = -1;
   int uid = -1;
   int nice_value;
-  char error[200];
+  char error[200]; // TODO with malloc
   int rv = 0;
   int nice_value_set = -1;
 
