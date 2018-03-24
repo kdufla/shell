@@ -11,7 +11,8 @@ fun_desc_t cmd_table[] = {
   {cmd_nice, "nice", "run program with predefined nice value\n\tusage: nice -n | --adjustment <priority> <program>\n"},
   {cmd_renice, "renice", "change priority of running process\n\tusage: renice [-n] <priority> [-p] <process id> [-g <group id>] [-u <user id>]\n"},
   {cmd_kill, "kill", "send signals to processes\n\tusage: kill -s <signal> | --signal <signal> | -<signal> <process id> | -<user id> | 0\n\t       kill -l | --list\n"},
-  {cmd_echo, "echo", "print enviroment variable or string or last child process status\n"}
+  {cmd_echo, "echo", "print enviroment variable or string or last child process status\n"},
+  {cmd_type, "type", "print type of command"}
 };
 
 /* Prints a helpful description for the given command */

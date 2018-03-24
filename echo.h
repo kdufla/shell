@@ -13,9 +13,6 @@
 #include "tokenizer.h"
 #include "execute.h"
 
-/*last child's process status*/
-int last_status;
-
 int cmd_echo(struct tokens *tokens);
 
 void echo_clean_up();

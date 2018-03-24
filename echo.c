@@ -7,14 +7,13 @@ char* firstSymbol;
 char* secondSymbol;
 char* variable_name;
 
-
 int cmd_echo(struct tokens *tokens){
 	size_t args_len = tokens_get_length(tokens);
 	second = strdup(tokens_get_token(tokens,1));                 
 	dolar = strdup("$");									
-	status = strdup("?");									
-	firstSymbol = malloc(1);										
-	secondSymbol = malloc(1);										
+	status = strdup("?");	
+	firstSymbol = malloc(2);										
+	secondSymbol = malloc(2);										
 	memmove(firstSymbol, second, 1);
 	memmove(secondSymbol, second+1,1);
 	if (!strcmp(dolar,firstSymbol)){
