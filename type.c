@@ -29,8 +29,10 @@ my_node* search_all_program(struct tokens* tokens, char* program){
 int cmd_type(struct tokens *tokens){
 	struct tokens* env_tok = tokenize(getenv("PATH"), ":");
 	size_t length = tokens_get_length(tokens);
+	char* flag = strdup("-a");
 	for(int i=1; i<length; i++) {
 		char* program_name = tokens_get_token(tokens, i);
+		if(!strcmp(program_name,flag)) continue; 
 		int fundex = lookup(program_name);
 		if (fundex >= 0) {
 			fprintf(stdout, "%s is a shell builtin\n", tokens_get_token(tokens,i));
@@ -50,6 +52,7 @@ int cmd_type(struct tokens *tokens){
 		}
 		free(head);
 	}
+	free(flag);
 	tokens_destroy(env_tok);
 	return 0;
 }
