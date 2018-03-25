@@ -41,19 +41,19 @@ int check_match(const char *line, const char *delim){
   return 1;
 }
 
+
 struct tokens *tokenize(const char *line, const char* delim) {
   if (line == NULL) {
     return NULL;
   }
-
 
   static char token[4096];
   size_t n = 0, n_max = 4096;
   struct tokens *tokens;
   size_t line_length = strlen(line);
 
-  if(line[strlen(line)-1]=='\n')
-    line_length--;
+  // if(line[strlen(line)-1]=='\n')
+    // line_length--;
 
   tokens = (struct tokens *) malloc(sizeof(struct tokens));
   tokens->tokens_length = 0;
@@ -71,12 +71,13 @@ struct tokens *tokenize(const char *line, const char* delim) {
     char c = line[i];
     if (mode == MODE_NORMAL) {
       if (c == '\'') {
-        token[n++] = c;
+        if (delim[0] != '\0') token[n++] = c;
         mode = MODE_SQUOTE;
       } else if (c == '"') {
-        token[n++] = c;
+        if (delim[0] != '\0') token[n++] = c;
         mode = MODE_DQUOTE;
       } else if (c == '\\') {
+        if (delim[0] != '\0') token[n++] = c;
         if (i + 1 < line_length) {
           token[n++] = line[++i];
         }
@@ -98,9 +99,10 @@ struct tokens *tokenize(const char *line, const char* delim) {
       }
     } else if (mode == MODE_SQUOTE) {
       if (c == '\'') {
-        token[n++] = c;
+        if (delim[0] != '\0')token[n++] = c;
         mode = MODE_NORMAL;
       } else if (c == '\\') {
+        if (delim[0] != '\0') token[n++] = c;
         if (i + 1 < line_length) {
           token[n++] = line[++i];
         }
@@ -109,9 +111,10 @@ struct tokens *tokenize(const char *line, const char* delim) {
       }
     } else if (mode == MODE_DQUOTE) {
       if (c == '"') {
-        token[n++] = c;
+        if (delim[0] != '\0') token[n++] = c;
         mode = MODE_NORMAL;
       } else if (c == '\\') {
+        if (delim[0] != '\0') token[n++] = c;
         if (i + 1 < line_length) {
           token[n++] = line[++i];
         }
@@ -127,8 +130,6 @@ struct tokens *tokenize(const char *line, const char* delim) {
     vector_push(&tokens->tokens, &tokens->tokens_length, word);
     n = 0;
   }
-  // printf("line:%s, delim:%s.\n", line, delim);
-  // mainc(tokens);
   return tokens;
 }
 
