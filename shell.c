@@ -111,7 +111,16 @@ int main(unused int argc, unused char *argv[]) {
   static char line[4096];
   int line_num = 0;
 
-  int loop = 1;
+  int loop = true;
+
+  if(argc > 1){
+    if(strcmp(argv[1], "-c")){
+      loop = false;
+      strcpy(line, argv[2]);
+    }else{
+      fprintf(stderr, "wrond flag");
+    }
+  }
   for (int i = 0; i < argc-1; ++i){
     if(!strcmp(argv[i], "-c")){
       loop = 0;
@@ -127,28 +136,41 @@ int main(unused int argc, unused char *argv[]) {
 
   while ((loop && fgets(line, 4096, stdin)) || !loop) {
 
-    struct procedure *proc_list = build_procedure_list(line);
+    char *actual_line;
 
-    struct procedure *cur = proc_list;
-    int skip = 0;
-    int rv;
+    struct tokens *semicolon = tokenize(line, "; ");
 
-    // iterate throught procedures and skip unnecessary ones
-    while(cur){
-      if(skip){
-        skip--;
-      }else{
-        rv = execute(cur->command, -21);
+    for(int com = 0; com < tokens_get_length(semicolon); com++){
+      actual_line = tokens_get_token(semicolon, com);
+
+      struct procedure *proc_list = build_procedure_list(actual_line);
+
+      struct procedure *cur = proc_list;
+      int skip = 0;
+      int rv;
+
+      // iterate throught procedures and skip unnecessary ones
+      while(cur){
+        if(skip){
+          skip--;
+        }else{
+          rv = execute(cur->command, -21);
+        }
+
+        if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){
+          skip++;
+        }
+
+        cur = cur->next;
       }
 
-      if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){
-        skip++;
-      }
+      destroy_procedure_list(proc_list);
 
-      cur = cur->next;
+
     }
 
-    destroy_procedure_list(proc_list);
+    tokens_destroy(semicolon);
+
 
     if (shell_is_interactive && loop)
       /* Please only print shell prompts when standard input is not a tty */

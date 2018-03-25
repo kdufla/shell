@@ -282,19 +282,28 @@ int execute(char* line, int nice_value){
     }
 
     /* Split our line into words. */
-      struct tokens *tokens = tokenize(tokens_get_token(piper, i), "");
+    struct tokens *tokens = tokenize(tokens_get_token(piper, i), "");
 
+    char *name = strdup(tokens_get_token(tokens, 0));
+    char *eqsign = strchr(name, '=');
+
+    if(eqsign){
+      *eqsign = '\0';
+      eqsign++;
+      setenv(name, eqsign, true);
+    }else{
       /* Find which built-in function to run. */
       int fundex = lookup(tokens_get_token(tokens, 0));
       int execmode = (piplen == 1/* && !out_red && !out_red_app && !in_red*/) ? NORMAL_EXEC : REDIR_EXEC;
 
       spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1);
+    }
 
-      close(fd[1]);
+    close(fd[1]);
 
-      in_fd = fd[0];
+    in_fd = fd[0];
 
-      tokens_destroy(tokens);
+    tokens_destroy(tokens);
   }
 
   for(int i = 0; i < tokens_get_length(piper); i++){
