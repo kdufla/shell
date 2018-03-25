@@ -30,7 +30,7 @@ void setsudoenv(sudoenv *e, char *name, char *value){
 
 char* getsudoenv(sudoenv *e, char *name){
 	for(int i = 0; i < e->curr_size; i++){
-		if(strcmp(e->elems[i].name, name)){
+		if(!strcmp(e->elems[i].name, name)){
 			return strdup(e->elems[i].value);
 		}
 	}

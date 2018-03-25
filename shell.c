@@ -39,7 +39,7 @@ pid_t shell_pgid;
 
 /* Intialization procedures for this shell */
 void init_shell() {
-  envi = malloc(sizeof(sudoenv *));
+  envi = malloc(sizeof(sudoenv));
   sudoenv_init(envi);
   /* Our shell is connected to standard input. */
   shell_terminal = STDIN_FILENO;

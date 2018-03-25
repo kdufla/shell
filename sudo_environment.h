@@ -1,3 +1,6 @@
+#ifndef __sudo_enviroment__
+#define __sudo_enviroment__
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,3 +26,5 @@ void setsudoenv(sudoenv *e, char *name, char *value);
 char* getsudoenv(sudoenv *e, char *name);
 
 void destroy_sudoenv(sudoenv *e);
+
+#endif

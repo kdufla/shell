@@ -29,7 +29,15 @@ int cmd_echo(struct tokens *tokens){
 					variable_name[strlen(tokeni)] = '\0';
 					char* variable_value = getenv(variable_name);
 					if (variable_value != NULL){
-						fprintf(stdout, "%.*s ", (int) strlen(variable_value)-1,variable_value);
+						if(variable_value[strlen(variable_value)] == '\n'){
+							fprintf(stdout, "%.*s ", (int) strlen(variable_value)-1,variable_value);
+						} else {
+							fprintf(stdout, "%s ", variable_value);
+						}
+					} else {
+						variable_value = getsudoenv(envi, variable_name);
+						fprintf(stdout,"%s", variable_value);
+						free(variable_value);
 					}
 					free(variable_name);
 				}
