@@ -13,6 +13,7 @@
 
 #include "tokenizer.h"
 #include "execute.h"
+#include "sudo_environment.h"
 
 /* Convenience macro to silence compiler warnings about unused function parameters. */
 #define AND 0
@@ -38,6 +39,8 @@ pid_t shell_pgid;
 
 /* Intialization procedures for this shell */
 void init_shell() {
+  envi = malloc(sizeof(sudoenv *));
+  sudoenv_init(envi);
   /* Our shell is connected to standard input. */
   shell_terminal = STDIN_FILENO;
 
@@ -114,7 +117,7 @@ int main(unused int argc, unused char *argv[]) {
   int loop = true;
 
   if(argc > 1){
-    if(strcmp(argv[1], "-c")){
+    if(strcmp(argv[1], "-c") == 0){
       loop = false;
       strcpy(line, argv[2]);
     }else{

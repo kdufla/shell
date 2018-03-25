@@ -290,7 +290,7 @@ int execute(char* line, int nice_value){
     if(eqsign){
       *eqsign = '\0';
       eqsign++;
-      setenv(name, eqsign, true);
+      setsudoenv(envi, name, eqsign);
     }else{
       /* Find which built-in function to run. */
       int fundex = lookup(tokens_get_token(tokens, 0));

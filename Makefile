@@ -1,4 +1,4 @@
-SRCS=shell.c tokenizer.c util.c cd.c pwd.c ulimit.c nice.c execute.c echo.c renice.c kill.c type.c
+SRCS=shell.c tokenizer.c util.c cd.c pwd.c ulimit.c nice.c execute.c echo.c renice.c kill.c type.c sudo_environment.c
 EXECUTABLES=shell
 
 CC=gcc
@@ -17,3 +17,4 @@ $(EXECUTABLES): $(OBJS)
 
 clean:
 	rm -rf $(EXECUTABLES) $(OBJS)
+	find . -type f | xargs touch

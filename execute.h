@@ -24,6 +24,7 @@
 #include "bool.h"
 #include "echo.h"
 #include "type.h"
+#include "sudo_environment.h"
 
 #define unused __attribute__((unused))
 #define NORMAL_EXEC 0
