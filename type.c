@@ -3,13 +3,11 @@
 
 my_node* search_all_program(struct tokens* tokens, char* program){
 	my_node *head = malloc(sizeof(my_node)), *cur, *prev;
-	//prev = head;
 	cur = head;
 	int count = 0;
     for(int i = 0; i < tokens_get_length(tokens); i++){
       char* path = concat_for_path(tokens_get_token(tokens, i), program);
       if(check_file(path)){
-        //my_node* tmp = malloc(sizeof(my_node));
 		cur->word = path;
 		cur->next = malloc(sizeof(my_node));
 		prev = cur;
@@ -32,9 +30,9 @@ my_node* search_all_program(struct tokens* tokens, char* program){
 int cmd_type(struct tokens *tokens){
 	struct tokens* env_tok = tokenize(getenv("PATH"), ":");
 	char* program_name = tokens_get_token(tokens, 1);
-	int fundex = lookup(tokens_get_token(tokens, 1));
+	int fundex = lookup(program_name);
 	if (fundex >= 0) {
-		fprintf(stdout, "%s is a builtin\n", tokens_get_token(tokens,1));
+		fprintf(stdout, "%s is a shell builtin\n", tokens_get_token(tokens,1));
 	}
 	my_node* head = search_all_program(env_tok,program_name);
 	my_node* current;

@@ -15,6 +15,8 @@
 
 int cmd_echo(struct tokens *tokens);
 
-void echo_clean_up();
+void echo_clean_up1();
+
+void echo_clean_up2();
 
 #endif
