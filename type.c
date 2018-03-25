@@ -1,5 +1,4 @@
 #include "type.h"
-#include <assert.h>
 
 my_node* search_all_program(struct tokens* tokens, char* program){
 	my_node *head = malloc(sizeof(my_node)), *cur, *prev;
