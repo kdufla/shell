@@ -111,11 +111,21 @@ int main(unused int argc, unused char *argv[]) {
   static char line[4096];
   int line_num = 0;
 
+  int loop = 1;
+  for (int i = 0; i < argc-1; ++i){
+    if(!strcmp(argv[i], "-c")){
+      loop = 0;
+      strcpy(line, argv[i+1]);
+      // printf("argv[%d]: %s\n", i, argv[i+1]);
+      // execute(argv[i+1]);
+    }
+  }
+
   /* Please only print shell prompts when standard input is not a tty */
-  if (shell_is_interactive)
+  if (shell_is_interactive && loop)
     fprintf(stdout, "%d: ", line_num);
 
-  while (fgets(line, 4096, stdin)) {
+  while ((loop && fgets(line, 4096, stdin)) || !loop) {
 
     struct procedure *proc_list = build_procedure_list(line);
 
@@ -140,9 +150,10 @@ int main(unused int argc, unused char *argv[]) {
 
     destroy_procedure_list(proc_list);
 
-    if (shell_is_interactive)
+    if (shell_is_interactive && loop)
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
+    if(!loop) break;
   }
 
   return 0;
