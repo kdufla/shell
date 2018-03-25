@@ -12,7 +12,8 @@ fun_desc_t cmd_table[] = {
   {cmd_renice, "renice", "change priority of running process\n\tusage: renice [-n] <priority> [-p] <process id> [-g <group id>] [-u <user id>]\n"},
   {cmd_kill, "kill", "send signals to processes\n\tusage: kill -s <signal> | --signal <signal> | -<signal> <process id> | -<user id> | 0\n\t       kill -l | --list\n"},
   {cmd_echo, "echo", "print enviroment variable or string or last child process status\n"},
-  {cmd_type, "type", "print type of command"}
+  {cmd_type, "type", "print type of command"},
+  {cmd_export, "export", "export variables to child processes"}
 };
 
 /* Prints a helpful description for the given command */
@@ -24,6 +25,7 @@ int cmd_help(unused struct tokens *tokens) {
 
 /* Exits this shell */
 int cmd_exit(unused struct tokens *tokens) {
+  destroy_sudoenv(envi);
   exit(0);
 }
 
