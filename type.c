@@ -29,25 +29,28 @@ my_node* search_all_program(struct tokens* tokens, char* program){
 
 int cmd_type(struct tokens *tokens){
 	struct tokens* env_tok = tokenize(getenv("PATH"), ":");
-	char* program_name = tokens_get_token(tokens, 1);
-	int fundex = lookup(program_name);
-	if (fundex >= 0) {
-		fprintf(stdout, "%s is a shell builtin\n", tokens_get_token(tokens,1));
-	}
-	my_node* head = search_all_program(env_tok,program_name);
-	my_node* current;
-	if(fundex <0 && head == NULL){
-		fprintf(stdout, "type: %s: not found\n", program_name);
-	}	
-	while(1){
-		if (head == NULL) break;
-		current = head;
-		head = head->next;
-		fprintf(stdout, "%s is %s\n",program_name, current->word);
-		free(current->word);
-		free(current);
+	size_t length = tokens_get_length(tokens);
+	for(int i=1; i<length; i++) {
+		char* program_name = tokens_get_token(tokens, i);
+		int fundex = lookup(program_name);
+		if (fundex >= 0) {
+			fprintf(stdout, "%s is a shell builtin\n", tokens_get_token(tokens,i));
+		}
+		my_node* head = search_all_program(env_tok,program_name);
+		my_node* current;
+		if(fundex <0 && head == NULL){
+			fprintf(stdout, "type: %s: not found\n", program_name);
+		}	
+		while(1){
+			if (head == NULL) break;
+			current = head;
+			head = head->next;
+			fprintf(stdout, "%s is %s\n",program_name, current->word);
+			free(current->word);
+			free(current);
+		}
+		free(head);
 	}
 	tokens_destroy(env_tok);
-	free(head);
 	return 0;
 }
