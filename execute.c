@@ -303,6 +303,7 @@ int execute(char* line, int nice_value){
 
     in_fd = fd[0];
 
+    free(name);
     tokens_destroy(tokens);
   }
 
