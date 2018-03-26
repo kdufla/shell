@@ -155,7 +155,7 @@ void set_nice(int nice_value){
 
 int try_redirectin_in_file(int out_red, int out_red_app, char* out_file){
   if(out_red){ // if user wants to redirect std out in file
-    int outfd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 00600); // open new file write only and rw permissions for user
+    int outfd = open(out_file, O_WRONLY | O_CREAT, 0666); // open new file write only and rw permissions for user
     if(outfd == -1){
       fprintf(stderr, "%s\n", strerror(errno));
       return 1;
@@ -164,7 +164,7 @@ int try_redirectin_in_file(int out_red, int out_red_app, char* out_file){
     close(outfd); // close unused fd (file has 2 fd's (outfd and stdout) and we only need stdout)
     return 0;
   }else if(out_red_app){ // redirect stdout to file (append)
-    int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 00600);
+    int outfd = open(out_file, O_WRONLY | O_CREAT | O_APPEND, 0666);
     if(outfd == -1){
       fprintf(stderr, "%s\n", strerror(errno));
       return 1;

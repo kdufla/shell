@@ -42,18 +42,22 @@ int check_match(const char *line, const char *delim){
 }
 
 
-struct tokens *tokenize(const char *line, const char* delim) {
-  if (line == NULL) {
+struct tokens *tokenize(const char *linee, const char* delim) {
+  if (linee == NULL) {
     return NULL;
   }
+
+  char *line = strdup(linee);
 
   static char token[4096];
   size_t n = 0, n_max = 4096;
   struct tokens *tokens;
   size_t line_length = strlen(line);
 
-  if(line[strlen(line)-1]=='\n')
+  while(line[strlen(line)-1]=='\n' || line[strlen(line)-1]==' ' || line[strlen(line)-1]=='\t' || line[strlen(line)-1]=='\r'){
+    line[strlen(line)-1]='\0';
     line_length--;
+  }
 
   tokens = (struct tokens *) malloc(sizeof(struct tokens));
   tokens->tokens_length = 0;
@@ -130,6 +134,9 @@ struct tokens *tokenize(const char *line, const char* delim) {
     vector_push(&tokens->tokens, &tokens->tokens_length, word);
     n = 0;
   }
+
+  free(line);
+  
   return tokens;
 }
 
