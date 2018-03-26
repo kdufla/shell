@@ -153,16 +153,23 @@ struct tokens *tokenize(const char *line, const char* delim) {
           int j = i+1;
           while(j < line_length && (isalpha(line[j]) || isdigit(line[j]))) j++;
 
-          char* envVar = strndup(&line[i+1], j-i-1);
-          char* variable_value = getenv(envVar);
+          if(line[j] == '?'){
+            sprintf(&token[n], "%d", get_last_child());
+            n = strlen(token);
+            j++;
+          }
+          else{
+            char* envVar = strndup(&line[i+1], j-i-1);
+            char* variable_value = getenv(envVar);
 
-          if(variable_value)
-            repl = variable_value;
-          else
-            repl = getsudoenv(envi, envVar);
-          
-          strcpy(&token[n], repl);
-          n += strlen(repl);
+            if(variable_value)
+              repl = variable_value;
+            else
+              repl = getsudoenv(envi, envVar);
+
+            strcpy(&token[n], repl);
+            n += strlen(repl);
+          }
           i = j;
         }
         token[n++] = line[i];
