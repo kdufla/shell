@@ -14,7 +14,9 @@ ulimit_resource_t resource_dict[] = {
   {'f', RLIMIT_FSIZE,      "file size               (blocks, -f)", 1024},
   {'i', RLIMIT_SIGPENDING, "pending signals                 (-i)", 1   },
   {'l', RLIMIT_MEMLOCK,    "max locked memory       (kbytes, -l)", 1024},
+  {'m', RLIMIT_RSS,        "max memory size         (kbytes, -m)", 1024},
   {'n', RLIMIT_NOFILE,     "open files                      (-n)", 1   },
+  {'p', -1,                "pipe size            (512 bytes, -p)", 512 },
   {'q', RLIMIT_MSGQUEUE,   "POSIX message queues     (bytes, -q)", 1   },
   {'r', RLIMIT_RTPRIO,     "real-time priority              (-r)", 1   },
   {'s', RLIMIT_STACK,      "stack size              (kbytes, -s)", 1024},
@@ -22,8 +24,6 @@ ulimit_resource_t resource_dict[] = {
   {'u', RLIMIT_NPROC,      "max user processes              (-u)", 1   },
   {'v', RLIMIT_AS,         "virtual memory          (kbytes, -v)", 1024},
   {'x', RLIMIT_LOCKS,      "file locks                      (-x)", 1   }
-  // {'m', -1,                "max memory size         (kbytes, -m)", 1024},
-  // {'p', -1,                "pipe size            (512 bytes, -p)", 512 }
 };
 
 typedef struct ulimit_value {
@@ -45,8 +45,8 @@ int resource_lookup(char symbol) {
 
 int cmd_ulimit(struct tokens *tokens){
   size_t args_len = tokens_get_length(tokens);
-  ulimit_value_t values[14]; // Can be optimized using malloc
-  for (int i = 0; i < 14; i++) {
+  ulimit_value_t values[16]; // Can be optimized using malloc
+  for (int i = 0; i < 16; i++) {
     values[i].used = -1;
   }
   int value_i = 0;
@@ -73,12 +73,15 @@ int cmd_ulimit(struct tokens *tokens){
         }
         else if (arg[1] == 'a') {
           value_i = 0;
-          for (int j = 0; j < 14; j++) {
+          for (int j = 0; j < 16; j++) {
             ulimit_resource_t resource = resource_dict[j];
             values[value_i].rlim = malloc(sizeof(struct rlimit));
             values[value_i].used = 0;
             values[value_i].resource = resource.resource;
-            rv = getrlimit(resource.resource, values[value_i].rlim);
+
+            if (resource.resource != -1) {
+              rv = getrlimit(resource.resource, values[value_i].rlim);
+            }
             if(rv == 0){
               values[value_i].name = resource.name;
               values[value_i].divisor = resource.divisor;
@@ -97,7 +100,10 @@ int cmd_ulimit(struct tokens *tokens){
             values[value_i].rlim = malloc(sizeof(struct rlimit));
             values[value_i].used = 0;
             values[value_i].resource = resource.resource;
-            rv = getrlimit(resource.resource, values[value_i].rlim);
+
+            if (resource.resource != -1) {
+              rv = getrlimit(resource.resource, values[value_i].rlim);
+            }
             if(rv == 0){
               values[value_i].name = resource.name;
               values[value_i].divisor = resource.divisor;
@@ -137,7 +143,13 @@ int cmd_ulimit(struct tokens *tokens){
           rlim->rlim_max = (rlim_t)num;
         }
         const struct rlimit *rlim1 = rlim;
-        rv = setrlimit(values[value_i-1].resource, rlim1);
+        if (values[value_i-1].resource != -1) {
+          rv = setrlimit(values[value_i-1].resource, rlim1);
+        }
+        else {
+          fprintf(stderr, "Invalid argument\n");
+          return -1;
+        }
         if (rv == -1) {
           fprintf(stderr, "%s\n", strerror(errno));
         }
@@ -151,16 +163,21 @@ int cmd_ulimit(struct tokens *tokens){
     }
   }
 
-  for (int i = 0; i < 14; i++) {
+  for (int i = 0; i < 16; i++) {
     if (values[i].used == 0) {
       if (rv == 0 && is_set != 0) {
-        struct rlimit *rlim = values[i].rlim;
         rlim_t lim;
-        if (hardness == 0) {
-          lim = rlim->rlim_cur;
+        if (values[i].resource != -1) {
+          struct rlimit *rlim = values[i].rlim;
+          if (hardness == 0) {
+            lim = rlim->rlim_cur;
+          }
+          else {
+            lim = rlim->rlim_max;
+          }
         }
         else {
-          lim = rlim->rlim_max;
+          lim = 4096;
         }
         if (lim == RLIM_INFINITY) {
           fprintf(stdout, "%s unlimited\n", values[i].name);
