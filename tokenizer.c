@@ -94,7 +94,7 @@ struct tokens *tokenize(const char *linee, const char* delim) {
           int j = i+1;
           while(j < line_length && (isalpha(line[j]) || isdigit(line[j]))) j++;
 
-          if(line[j] == '?'){
+          if(line[j-1] == '$' && line[j] == '?'){
             sprintf(&token[n], "%d", get_last_child());
             n = strlen(token);
             j++;
@@ -110,7 +110,11 @@ struct tokens *tokenize(const char *linee, const char* delim) {
 
             strcpy(&token[n], repl);
             n += strlen(repl);
+            free(repl);
+            free(envVar);
+            free(variable_value);
           }
+
           i = j;
         }
 
@@ -157,7 +161,7 @@ struct tokens *tokenize(const char *linee, const char* delim) {
           int j = i+1;
           while(j < line_length && (isalpha(line[j]) || isdigit(line[j]))) j++;
 
-          if(line[j] == '?'){
+          if(line[j-1] == '$' && line[j] == '?'){
             sprintf(&token[n], "%d", get_last_child());
             n = strlen(token);
             j++;
@@ -173,6 +177,9 @@ struct tokens *tokenize(const char *linee, const char* delim) {
 
             strcpy(&token[n], repl);
             n += strlen(repl);
+            free(repl);
+            free(envVar);
+            free(variable_value);
           }
           i = j;
         }
