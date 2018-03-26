@@ -286,10 +286,16 @@ int spawn(struct tokens *tokens,
   return pid;
 }
 
-void wait_for_pipeline(int p_num){
+void wait_for_children(int p_num){
   for(int i = 0; i < p_num; i++){
     int rs;
+
+    fprintf(stdout, "Before wait\n");
+
     waitpid(WAIT_ANY, &rs, WUNTRACED);
+
+    fprintf(stdout, "After wait\n");
+
     if (WIFEXITED(rs)) {
       last_child = WEXITSTATUS(rs);
     }
@@ -360,15 +366,28 @@ int execute(char* line, int nice_value, int foreground){
   }
 
   if (!isatty(shell_terminal)) {
-    wait_for_pipeline(child_num);
+    fprintf(stdout, "Wait for %d children\n", child_num);
+    wait_for_children(child_num);
+    fprintf(stdout, "Children returned\n");
   }
   else if (foreground) {
+    fprintf(stdout, "Wait for %d foreground children\n", child_num);
+
     tcsetpgrp(shell_terminal, pipe_gid);
 
-    wait_for_pipeline(child_num);
+    fprintf(stdout, "After 1st tscdtskfl\n");
+
+    wait_for_children(child_num);
+
+    fprintf(stdout, "Before 2nd tscdtskfl\n");
 
     tcsetpgrp(shell_terminal, getpgrp());
     tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
+
+    fprintf(stdout, "Foreground children returned\n");
+  }
+  else {
+    fprintf(stdout, "Background\n");
   }
 
   // for(int i=0; i<piplen; i++){

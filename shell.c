@@ -122,7 +122,7 @@ int main(unused int argc, unused char *argv[]) {
       loop = false;
       strcpy(line, argv[2]);
     }else{
-      fprintf(stderr, "wrond flag");
+      fprintf(stderr, "wrong flag");
     }
   }
   for (int i = 0; i < argc-1; ++i){
@@ -147,6 +147,19 @@ int main(unused int argc, unused char *argv[]) {
     for(int com = 0; com < tokens_get_length(semicolon); com++){
       actual_line = tokens_get_token(semicolon, com);
 
+      int foreground = 1;
+
+      int ch = strlen(actual_line) - 1;
+      while(actual_line[ch] == ' ' || actual_line[ch] == '\t' || actual_line[ch] == '\n') {
+        ch--;
+      }
+      if (actual_line[ch] == '&') {
+        actual_line[ch] = '\0';
+        foreground = 0;
+      }
+
+      fprintf(stdout, "%s\n", actual_line);
+
       struct procedure *proc_list = build_procedure_list(actual_line);
 
       struct procedure *cur = proc_list;
@@ -158,7 +171,7 @@ int main(unused int argc, unused char *argv[]) {
         if(skip){
           skip--;
         }else{
-          rv = execute(cur->command, -21, 1);
+          rv = execute(cur->command, -21, foreground);
         }
 
         if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){
