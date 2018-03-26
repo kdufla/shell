@@ -286,7 +286,14 @@ int execute(char* line, int nice_value){
     /* Split our line into words. */
     struct tokens *tokens = tokenize(tokens_get_token(piper, i), "");
 
-    char *name = strdup(tokens_get_token(tokens, 0));
+    char *t = tokens_get_token(tokens, 0);
+    if(t == NULL){
+      fprintf(stderr, "Invalid input\n");
+      tokens_destroy(tokens);
+      tokens_destroy(piper);
+      return 1;
+    }
+    char *name = strdup(t);
     char *eqsign = strchr(name, '=');
 
     if(eqsign){
