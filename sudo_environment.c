@@ -16,7 +16,7 @@ void setsudoenv(sudoenv *e, char *name, char *value){
 		}
 
 		for(int i = 0; i < e->curr_size; i++){
-			if(strcmp(e->elems[i].name, name)){
+			if(!strcmp(e->elems[i].name, name)){
 				free(e->elems[i].value);
 				e->elems[i].value = strdup(value);
 				return;
