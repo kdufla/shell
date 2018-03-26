@@ -188,7 +188,7 @@ int main(unused int argc, unused char *argv[]) {
 
 
     }
-    
+
     tokens_destroy(number_sign);
     tokens_destroy(semicolon);
 
