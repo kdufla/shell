@@ -52,8 +52,8 @@ struct tokens *tokenize(const char *line, const char* delim) {
   struct tokens *tokens;
   size_t line_length = strlen(line);
 
-  // if(line[strlen(line)-1]=='\n')
-    // line_length--;
+  if(line[strlen(line)-1]=='\n')
+    line_length--;
 
   tokens = (struct tokens *) malloc(sizeof(struct tokens));
   tokens->tokens_length = 0;
