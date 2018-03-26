@@ -6,7 +6,7 @@ int cmd_nice(struct tokens *tokens){
   int rv = 0;
   char *value;
   char *line;
-  char error[100];  // TODO with malloc
+  char error[100];
   if(args_len > 1){
     char *arg = tokens_get_token(tokens, 1);
     if (arg[0] == '-' && strlen(arg) == 2 && arg[1] == 'n' && args_len > 2) {

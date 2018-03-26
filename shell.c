@@ -161,8 +161,6 @@ int main(unused int argc, unused char *argv[]) {
         foreground = 0;
       }
 
-      fprintf(stdout, "%s\n", actual_line);
-
       struct procedure *proc_list = build_procedure_list(actual_line);
 
       struct procedure *cur = proc_list;
