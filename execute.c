@@ -2,6 +2,8 @@
 
 static int last_child = 0;
 
+int bg_p_num = 0;
+
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu\n"},
   {cmd_exit, "exit", "exit the command shell\n"},
@@ -13,7 +15,8 @@ fun_desc_t cmd_table[] = {
   {cmd_kill, "kill", "send signals to processes\n\tusage: kill -s <signal> | --signal <signal> | -<signal> <process id> | -<user id> | 0\n\t       kill -l | --list\n"},
   {cmd_echo, "echo", "print enviroment variable or string or last child process status\n"},
   {cmd_type, "type", "print type of command"},
-  {cmd_export, "export", "export variables to child processes"}
+  {cmd_export, "export", "export variables to child processes"},
+  {cmd_wait, "wait", "wait for background jobs to finish"}
 };
 
 /* Prints a helpful description for the given command */
@@ -21,6 +24,15 @@ int cmd_help(unused struct tokens *tokens) {
   for (unsigned int i = 0; i < sizeof(cmd_table) / sizeof(fun_desc_t); i++)
     printf("%s - %s\n", cmd_table[i].cmd, cmd_table[i].doc);
   return 1;
+}
+
+int cmd_wait(unused struct tokens *tokens) {
+  for(int i = 0; i < bg_p_num; i++) {
+    int rs;
+    waitpid(-1, &rs, WUNTRACED);
+  }
+  bg_p_num = 0;
+  return 0;
 }
 
 /* Exits this shell */
@@ -389,6 +401,9 @@ int execute(char* line, int nice_value, int foreground){
     tcsetpgrp(shell_terminal, getpgrp());
     tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
 
+  }
+  else {
+    bg_p_num = child_num;
   }
 
   // for(int i=0; i<piplen; i++){
