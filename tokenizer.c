@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
+#include "execute.h"
 #include "tokenizer.h"
 
 struct tokens {
@@ -82,8 +84,34 @@ struct tokens *tokenize(const char *line, const char* delim) {
           token[n++] = line[++i];
         }
       } else {
+        while(line[i] == '$'){
+          char* repl;
+
+          int j = i+1;
+          while(j < line_length && (isalpha(line[j]) || isdigit(line[j]))) j++;
+
+          if(line[j] == '?'){
+            sprintf(&token[n], "%d", get_last_child());
+            n = strlen(token);
+            j++;
+          }
+          else{
+            char* envVar = strndup(&line[i+1], j-i-1);
+            char* variable_value = getenv(envVar);
+
+            if(variable_value)
+              repl = variable_value;
+            else
+              repl = getsudoenv(envi, envVar);
+
+            strcpy(&token[n], repl);
+            n += strlen(repl);
+          }
+          i = j;
+        }
+
         int skip = -1;
-        if (delim[0] == '\0' && isspace(c)) skip = 0;
+        if (delim[0] == '\0' && isspace(line[i])) skip = 0;
         if (delim[0] != '\0' && check_match(&line[i], delim)) skip = strlen(delim)-1;
 
         if(skip != -1){
@@ -94,7 +122,7 @@ struct tokens *tokenize(const char *line, const char* delim) {
           }
           i += skip;
         }else {
-          token[n++] = c;
+          token[n++] = line[i];
         }
       }
     } else if (mode == MODE_SQUOTE) {
@@ -119,7 +147,25 @@ struct tokens *tokenize(const char *line, const char* delim) {
           token[n++] = line[++i];
         }
       } else {
-        token[n++] = c;
+        while(line[i] == '$'){
+          char* repl;
+
+          int j = i+1;
+          while(j < line_length && (isalpha(line[j]) || isdigit(line[j]))) j++;
+
+          char* envVar = strndup(&line[i+1], j-i-1);
+          char* variable_value = getenv(envVar);
+
+          if(variable_value)
+            repl = variable_value;
+          else
+            repl = getsudoenv(envi, envVar);
+          
+          strcpy(&token[n], repl);
+          n += strlen(repl);
+          i = j;
+        }
+        token[n++] = line[i];
       }
     }
     if (n + 1 >= n_max) abort();
