@@ -24,9 +24,18 @@ int cmd_help(unused struct tokens *tokens) {
 }
 
 /* Exits this shell */
-int cmd_exit(unused struct tokens *tokens) {
+int cmd_exit(struct tokens *tokens) {
   destroy_sudoenv(envi);
-  exit(0);
+  int exit_value=0;
+  if(tokens_get_length(tokens) > 1){
+    char *val = tokens_get_token(tokens, 1);
+    if(!is_integer(val)){
+      exit_value = atoi(val);
+    }else{
+      perror("Not an integer");
+    }
+  }
+  exit(exit_value);
 }
 
 int get_last_child(){
@@ -332,7 +341,14 @@ int execute(char* line, int nice_value, int foreground){
     /* Split our line into words. */
     struct tokens *tokens = tokenize(tokens_get_token(piper, i), "");
 
-    char *name = strdup(tokens_get_token(tokens, 0));
+    char *t = tokens_get_token(tokens, 0);
+    if(t == NULL){
+      fprintf(stderr, "Invalid input\n");
+      tokens_destroy(tokens);
+      tokens_destroy(piper);
+      return 1;
+    }
+    char *name = strdup(t);
     char *eqsign = strchr(name, '=');
 
     if(eqsign){

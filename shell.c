@@ -142,7 +142,10 @@ int main(unused int argc, unused char *argv[]) {
 
     char *actual_line;
 
-    struct tokens *semicolon = tokenize(line, "; ");
+    struct tokens *number_sign = tokenize(line, "#");
+    actual_line = tokens_get_token(number_sign, 0);
+
+    struct tokens *semicolon = tokenize(actual_line, "; ");
 
     for(int com = 0; com < tokens_get_length(semicolon); com++){
       actual_line = tokens_get_token(semicolon, com);
@@ -185,7 +188,8 @@ int main(unused int argc, unused char *argv[]) {
 
 
     }
-
+    
+    tokens_destroy(number_sign);
     tokens_destroy(semicolon);
 
 
