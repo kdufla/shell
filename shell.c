@@ -22,12 +22,6 @@
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
 
-/* File descriptor for the shell input */
-int shell_terminal;
-
-/* Terminal mode settings for the shell */
-struct termios shell_tmodes;
-
 typedef struct procedure{
   char *command;
   int logop;
@@ -53,6 +47,13 @@ void init_shell() {
      * foreground, we'll receive a SIGCONT. */
     while (tcgetpgrp(shell_terminal) != (shell_pgid = getpgrp()))
       kill(-shell_pgid, SIGTTIN);
+
+      signal (SIGINT, SIG_IGN);
+      signal (SIGQUIT, SIG_IGN);
+      signal (SIGTSTP, SIG_IGN);
+      signal (SIGTTIN, SIG_IGN);
+      signal (SIGTTOU, SIG_IGN);
+      signal (SIGCHLD, SIG_IGN);
 
     /* Saves the shell's process id */
     shell_pgid = getpid();
@@ -157,7 +158,7 @@ int main(unused int argc, unused char *argv[]) {
         if(skip){
           skip--;
         }else{
-          rv = execute(cur->command, -21);
+          rv = execute(cur->command, -21, 1);
         }
 
         if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){

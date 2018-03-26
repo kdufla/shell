@@ -173,7 +173,7 @@ int run_builtin_inside_current_proccess(int fundex, int in_red, int out_red, int
   int savein = dup(STDIN_FILENO), saveout = dup(STDOUT_FILENO); // save std in and out
 
   if(try_reading_from_file(in_red, in_file) == 0 && try_redirectin_in_file(out_red, out_red_app, out_file) == 0){
-    int rv = cmd_table[fundex].fun(tokens);
+    cmd_table[fundex].fun(tokens);
 
     dup2(savein, STDIN_FILENO); // restore stdin
     close(savein);
@@ -181,9 +181,9 @@ int run_builtin_inside_current_proccess(int fundex, int in_red, int out_red, int
     dup2(saveout, STDOUT_FILENO); // restore stdout
     close(saveout);
 
-    return rv;
+    return 0;
   }else{
-    return 1;
+    return -1;
   }
 }
 
@@ -215,7 +215,21 @@ int child_redirections(int first, int last, int in_red, int out_red, int out_red
  * if command only used built-in function return 0
  * if error return -1
  */
-int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int out_red_app, char* out_file, int in_red, char *in_file, int execmode, int in, int out, int first, int last){
+int spawn(struct tokens *tokens,
+          int fundex,
+          int nice_value,
+          int out_red,
+          int out_red_app,
+          char* out_file,
+          int in_red,
+          char *in_file,
+          int execmode,
+          int in,
+          int out,
+          int first,
+          int last,
+          int foreground,
+          int pipe_gid) {
 
   if (fundex >= 0 && execmode == NORMAL_EXEC) {
     return run_builtin_inside_current_proccess(fundex, in_red, out_red, out_red_app, in_file, out_file, tokens);
@@ -229,6 +243,20 @@ int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int ou
   }
 
   if (pid == 0){ // child
+
+    pid = getpid();
+    if (pipe_gid == 0) pipe_gid = pid;
+    setpgid (pid, pipe_gid);
+    if (foreground)
+      tcsetpgrp (shell_terminal, pipe_gid);
+
+    signal (SIGINT, SIG_DFL);
+    signal (SIGQUIT, SIG_DFL);
+    signal (SIGTSTP, SIG_DFL);
+    signal (SIGTTIN, SIG_DFL);
+    signal (SIGTTOU, SIG_DFL);
+    signal (SIGCHLD, SIG_DFL);
+
     if(child_redirections(first, last, in_red, out_red, out_red_app, in, out, in_file, out_file)){
       _exit(EXIT_FAILURE);
     }
@@ -258,7 +286,17 @@ int spawn(struct tokens *tokens, int fundex, int nice_value, int out_red, int ou
   return pid;
 }
 
-int execute(char* line, int nice_value){
+void wait_for_pipeline(int p_num){
+  for(int i = 0; i < p_num; i++){
+    int rs;
+    waitpid(WAIT_ANY, &rs, WUNTRACED);
+    if (WIFEXITED(rs)) {
+      last_child = WEXITSTATUS(rs);
+    }
+  }
+}
+
+int execute(char* line, int nice_value, int foreground){
 
   char *pipe_command = NULL, *out_file = NULL, *in_file = NULL;
   int ret = 1;
@@ -272,6 +310,8 @@ int execute(char* line, int nice_value){
 
   int piplen = tokens_get_length(piper);
 
+  int pipe_gid = 0;
+  int child_num = 0;
 
   int fd[2];
   int in_fd = STDIN_FILENO;
@@ -298,7 +338,17 @@ int execute(char* line, int nice_value){
       int fundex = lookup(tokens_get_token(tokens, 0));
       int execmode = (piplen == 1/* && !out_red && !out_red_app && !in_red*/) ? NORMAL_EXEC : REDIR_EXEC;
 
-      spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1);
+      int child_pid = spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1, foreground, pipe_gid);
+
+      /* If child process has been run successfully. */
+      if (child_pid != 0 && child_pid != -1) {
+        if (pipe_gid == 0) {
+          pipe_gid = child_pid;
+        }
+        child_num++;
+        setpgid(child_pid, pipe_gid);
+      }
+
     }
 
     close(fd[1]);
@@ -309,10 +359,16 @@ int execute(char* line, int nice_value){
     tokens_destroy(tokens);
   }
 
-  for(int i = 0; i < tokens_get_length(piper); i++){
-    int rs;
-    wait(&rs);
-    last_child = WEXITSTATUS(rs);
+  if (!isatty(shell_terminal)) {
+    wait_for_pipeline(child_num);
+  }
+  else if (foreground) {
+    tcsetpgrp(shell_terminal, pipe_gid);
+
+    wait_for_pipeline(child_num);
+
+    tcsetpgrp(shell_terminal, getpgrp());
+    tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
   }
 
   // for(int i=0; i<piplen; i++){

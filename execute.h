@@ -33,7 +33,7 @@
 
 int get_last_child();
 
-int execute(char* line, int nice_value);
+int execute(char* line, int nice_value, int foreground);
 
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
@@ -47,5 +47,11 @@ typedef struct fun_desc {
   char *cmd;
   char *doc;
 } fun_desc_t;
+
+/* Terminal mode settings for the shell */
+struct termios shell_tmodes;
+
+/* File descriptor for the shell input */
+int shell_terminal;
 
 #endif
