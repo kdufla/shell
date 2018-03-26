@@ -249,7 +249,6 @@ int spawn(struct tokens *tokens,
           int out,
           int first,
           int last,
-          int foreground,
           int pipe_gid) {
 
   if (fundex >= 0 && execmode == NORMAL_EXEC) {
@@ -319,7 +318,7 @@ void wait_for_children(int p_num, int pipe_gid){
   }
 }
 
-int execute(char* line, int nice_value, int foreground){
+int execute(char* line, int nice_value){
 
   char *pipe_command = NULL, *out_file = NULL, *in_file = NULL;
   int ret = 1;
@@ -368,7 +367,7 @@ int execute(char* line, int nice_value, int foreground){
       int fundex = lookup(tokens_get_token(tokens, 0));
       int execmode = (piplen == 1/* && !out_red && !out_red_app && !in_red*/) ? NORMAL_EXEC : REDIR_EXEC;
 
-      int child_pid = spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1, foreground, pipe_gid);
+      int child_pid = spawn(tokens, fundex, nice_value, out_red, out_red_app, out_file, in_red, in_file, execmode, in_fd, fd[1], i == 0,  i == piplen-1, pipe_gid);
 
       /* If child process has been run successfully. */
       if (child_pid != 0 && child_pid != -1) {
@@ -403,7 +402,7 @@ int execute(char* line, int nice_value, int foreground){
 
   }
   else {
-    bg_p_num = child_num;
+    bg_p_num += child_num;
   }
 
   // for(int i=0; i<piplen; i++){

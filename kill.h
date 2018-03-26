@@ -1,3 +1,6 @@
+#ifndef __KILL__
+#define __KILL__
+
 #include <sys/types.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -11,3 +14,5 @@
 #include "tokenizer.h"
 
 int cmd_kill(struct tokens *tokens);
+
+#endif

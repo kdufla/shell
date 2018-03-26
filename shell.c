@@ -35,6 +35,7 @@ pid_t shell_pgid;
 void init_shell() {
   envi = malloc(sizeof(sudoenv));
   sudoenv_init(envi);
+  foreground = 1;
   /* Our shell is connected to standard input. */
   shell_terminal = STDIN_FILENO;
 
@@ -134,6 +135,8 @@ int main(unused int argc, unused char *argv[]) {
     }
   }
 
+  foreground = 1;
+
   /* Please only print shell prompts when standard input is not a tty */
   if (shell_is_interactive && loop)
     fprintf(stdout, "%d: ", line_num);
@@ -150,7 +153,7 @@ int main(unused int argc, unused char *argv[]) {
     for(int com = 0; com < tokens_get_length(semicolon); com++){
       actual_line = tokens_get_token(semicolon, com);
 
-      int foreground = 1;
+      foreground = 1;
 
       int ch = strlen(actual_line) - 1;
       while(actual_line[ch] == ' ' || actual_line[ch] == '\t' || actual_line[ch] == '\n') {
@@ -172,7 +175,7 @@ int main(unused int argc, unused char *argv[]) {
         if(skip){
           skip--;
         }else{
-          rv = execute(cur->command, -21, foreground);
+          rv = execute(cur->command, -21);
         }
 
         if((cur->logop == AND && !rv) || (cur->logop == OR && rv)){

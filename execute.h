@@ -33,7 +33,7 @@
 
 int get_last_child();
 
-int execute(char* line, int nice_value, int foreground);
+int execute(char* line, int nice_value);
 
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
@@ -54,5 +54,7 @@ struct termios shell_tmodes;
 
 /* File descriptor for the shell input */
 int shell_terminal;
+
+int foreground;
 
 #endif
